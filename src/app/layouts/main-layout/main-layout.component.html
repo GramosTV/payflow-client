@@ -1,0 +1,199 @@
+<div class="min-h-screen bg-gray-100 flex">
+  <!-- Sidebar Navigation -->
+  <aside class="bg-indigo-800 text-white w-64 py-4 px-2 hidden md:block">
+    <div class="flex items-center justify-center mb-8">
+      <span class="font-bold text-2xl">PayFlow Lite</span>
+    </div>
+
+    <nav>
+      <ul>
+        <li class="mb-2">
+          <a
+            routerLink="/dashboard"
+            routerLinkActive="bg-indigo-900"
+            class="flex items-center px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <mat-icon class="mr-3">dashboard</mat-icon>
+            Dashboard
+          </a>
+        </li>
+        <li class="mb-2">
+          <a
+            routerLink="/wallet"
+            routerLinkActive="bg-indigo-900"
+            class="flex items-center px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <mat-icon class="mr-3">account_balance_wallet</mat-icon>
+            Wallet
+          </a>
+        </li>
+        <li class="mb-2">
+          <a
+            routerLink="/transactions"
+            routerLinkActive="bg-indigo-900"
+            class="flex items-center px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <mat-icon class="mr-3">swap_horiz</mat-icon>
+            Transactions
+          </a>
+        </li>
+        <li class="mb-2">
+          <a
+            routerLink="/money-requests"
+            routerLinkActive="bg-indigo-900"
+            class="flex items-center px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <mat-icon class="mr-3">request_quote</mat-icon>
+            Money Requests
+          </a>
+        </li>
+        <li class="mb-2">
+          <a
+            routerLink="/qr-code"
+            routerLinkActive="bg-indigo-900"
+            class="flex items-center px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <mat-icon class="mr-3">qr_code_2</mat-icon>
+            QR Code
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="mt-auto pt-4 border-t border-indigo-700 absolute bottom-4 w-56">
+      <button
+        (click)="logout()"
+        class="flex items-center px-4 py-2 rounded-lg hover:bg-indigo-700 w-full transition-colors"
+      >
+        <mat-icon class="mr-3">logout</mat-icon>
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col">
+    <!-- Top Navigation -->
+    <header class="bg-white shadow-sm">
+      <div class="flex items-center justify-between py-3 px-6">
+        <div class="flex items-center">
+          <button
+            mat-icon-button
+            class="md:hidden mr-2"
+            (click)="toggleSidebar()"
+          >
+            <mat-icon>menu</mat-icon>
+          </button>
+          <h1 class="text-xl font-semibold text-gray-800">{{ pageTitle }}</h1>
+        </div>
+        <div class="flex items-center">
+          <div class="relative mr-4">
+            <mat-icon class="text-gray-600 cursor-pointer"
+              >notifications</mat-icon
+            >
+            <span
+              *ngIf="notifications > 0"
+              class="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center"
+            >
+              {{ notifications }}
+            </span>
+          </div>
+          <div class="flex items-center bg-gray-100 rounded-full p-1">
+            <div
+              class="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-2"
+            >
+              {{ userInitials }}
+            </div>
+            <span
+              class="text-sm font-medium text-gray-700 mr-1 hidden sm:inline"
+              >{{ user?.fullName }}</span
+            >
+            <mat-icon class="text-gray-500">expand_more</mat-icon>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Mobile Sidebar (Drawer) -->
+    <mat-drawer-container class="h-full" autosize [hasBackdrop]="true">
+      <mat-drawer #drawer class="w-64 bg-indigo-800 text-white" mode="over">
+        <div
+          class="flex items-center justify-between p-4 border-b border-indigo-700"
+        >
+          <span class="font-bold text-xl">PayFlow Lite</span>
+          <button mat-icon-button (click)="drawer.toggle()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <nav class="py-4 px-2">
+          <ul>
+            <li class="mb-2">
+              <a
+                routerLink="/dashboard"
+                routerLinkActive="bg-indigo-900"
+                class="flex items-center px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <mat-icon class="mr-3">dashboard</mat-icon>
+                Dashboard
+              </a>
+            </li>
+            <li class="mb-2">
+              <a
+                routerLink="/wallet"
+                routerLinkActive="bg-indigo-900"
+                class="flex items-center px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <mat-icon class="mr-3">account_balance_wallet</mat-icon>
+                Wallet
+              </a>
+            </li>
+            <li class="mb-2">
+              <a
+                routerLink="/transactions"
+                routerLinkActive="bg-indigo-900"
+                class="flex items-center px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <mat-icon class="mr-3">swap_horiz</mat-icon>
+                Transactions
+              </a>
+            </li>
+            <li class="mb-2">
+              <a
+                routerLink="/money-requests"
+                routerLinkActive="bg-indigo-900"
+                class="flex items-center px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <mat-icon class="mr-3">request_quote</mat-icon>
+                Money Requests
+              </a>
+            </li>
+            <li class="mb-2">
+              <a
+                routerLink="/qr-code"
+                routerLinkActive="bg-indigo-900"
+                class="flex items-center px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <mat-icon class="mr-3">qr_code_2</mat-icon>
+                QR Code
+              </a>
+            </li>
+          </ul>
+          <div class="mt-4 pt-4 border-t border-indigo-700">
+            <button
+              (click)="logout()"
+              class="flex items-center px-4 py-2 rounded-lg hover:bg-indigo-700 w-full transition-colors"
+            >
+              <mat-icon class="mr-3">logout</mat-icon>
+              Logout
+            </button>
+          </div>
+        </nav>
+      </mat-drawer>
+
+      <!-- Page Content -->
+      <mat-drawer-content class="p-6 bg-gray-50">
+        <router-outlet></router-outlet>
+      </mat-drawer-content>
+    </mat-drawer-container>
+  </div>
+</div>
