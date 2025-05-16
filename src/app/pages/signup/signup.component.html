@@ -1,0 +1,181 @@
+<div
+  class="min-h-screen flex items-center justify-center bg-gray-100 py-12 px-4 sm:px-6 lg:px-8"
+>
+  <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-lg">
+    <div class="text-center">
+      <h2 class="mt-6 text-3xl font-extrabold text-indigo-800">PayFlow Lite</h2>
+      <p class="mt-2 text-sm text-gray-600">Create your account</p>
+    </div>
+
+    <form
+      class="mt-8 space-y-6"
+      [formGroup]="signupForm"
+      (ngSubmit)="onSubmit()"
+    >
+      <!-- Alert for errors -->
+      <div
+        *ngIf="error"
+        class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md text-sm"
+        role="alert"
+      >
+        {{ error }}
+      </div>
+
+      <!-- Full Name -->
+      <div>
+        <mat-form-field class="w-full">
+          <mat-label>Full Name</mat-label>
+          <input matInput formControlName="fullName" required />
+          <mat-icon matSuffix>person</mat-icon>
+          <mat-error *ngIf="signupForm.get('fullName')?.hasError('required')">
+            Full name is required
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Email -->
+      <div>
+        <mat-form-field class="w-full">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" required />
+          <mat-icon matSuffix>email</mat-icon>
+          <mat-error *ngIf="signupForm.get('email')?.hasError('required')">
+            Email is required
+          </mat-error>
+          <mat-error *ngIf="signupForm.get('email')?.hasError('email')">
+            Please enter a valid email address
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Password -->
+      <div>
+        <mat-form-field class="w-full">
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            [type]="hidePassword ? 'password' : 'text'"
+            formControlName="password"
+            required
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            (click)="hidePassword = !hidePassword"
+            tabindex="-1"
+          >
+            <mat-icon>{{
+              hidePassword ? "visibility_off" : "visibility"
+            }}</mat-icon>
+          </button>
+          <mat-error *ngIf="signupForm.get('password')?.hasError('required')">
+            Password is required
+          </mat-error>
+          <mat-error *ngIf="signupForm.get('password')?.hasError('minlength')">
+            Password must be at least 8 characters long
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Confirm Password -->
+      <div>
+        <mat-form-field class="w-full">
+          <mat-label>Confirm Password</mat-label>
+          <input
+            matInput
+            [type]="hideConfirmPassword ? 'password' : 'text'"
+            formControlName="confirmPassword"
+            required
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            (click)="hideConfirmPassword = !hideConfirmPassword"
+            tabindex="-1"
+          >
+            <mat-icon>{{
+              hideConfirmPassword ? "visibility_off" : "visibility"
+            }}</mat-icon>
+          </button>
+          <mat-error
+            *ngIf="signupForm.get('confirmPassword')?.hasError('required')"
+          >
+            Please confirm your password
+          </mat-error>
+          <mat-error *ngIf="signupForm.hasError('passwordsDoNotMatch')">
+            Passwords do not match
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Phone Number -->
+      <div>
+        <mat-form-field class="w-full">
+          <mat-label>Phone Number</mat-label>
+          <input matInput type="tel" formControlName="phoneNumber" />
+          <mat-icon matSuffix>phone</mat-icon>
+          <mat-hint>Optional</mat-hint>
+        </mat-form-field>
+      </div>
+
+      <!-- Terms and Conditions -->
+      <div>
+        <mat-checkbox formControlName="agreeToTerms" required>
+          <span class="text-sm text-gray-600"
+            >I agree to the
+            <a href="#" class="text-indigo-600 hover:text-indigo-500"
+              >Terms and Conditions</a
+            >
+          </span>
+        </mat-checkbox>
+        <mat-error
+          *ngIf="
+            signupForm.get('agreeToTerms')?.invalid &&
+            signupForm.get('agreeToTerms')?.touched
+          "
+          class="text-xs text-red-600 mt-1"
+        >
+          You must agree to the terms and conditions
+        </mat-error>
+      </div>
+
+      <!-- Submit Button -->
+      <div>
+        <button
+          type="submit"
+          [disabled]="loading || !signupForm.valid"
+          class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          <span
+            *ngIf="loading"
+            class="absolute left-0 inset-y-0 flex items-center pl-3"
+          >
+            <mat-spinner [diameter]="20"></mat-spinner>
+          </span>
+          <span
+            *ngIf="!loading"
+            class="absolute left-0 inset-y-0 flex items-center pl-3"
+          >
+            <mat-icon
+              class="h-5 w-5 text-indigo-500 group-hover:text-indigo-400"
+              >how_to_reg</mat-icon
+            >
+          </span>
+          Create Account
+        </button>
+      </div>
+
+      <div class="text-center mt-4">
+        <p class="text-sm text-gray-600">
+          Already have an account?
+          <a
+            routerLink="/login"
+            class="font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            Sign in
+          </a>
+        </p>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,348 @@
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Left Column: New Request Form and Incoming Requests -->
+  <div class="lg:col-span-2 space-y-6">
+    <!-- New Request Form Card -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+      <div class="bg-gradient-to-r from-indigo-600 to-violet-500 p-4">
+        <h2 class="text-lg font-medium text-white">Request Money</h2>
+      </div>
+      <div class="p-6">
+        <form [formGroup]="requestForm" (ngSubmit)="createMoneyRequest()">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field class="w-full">
+              <mat-label>Email or Phone Number</mat-label>
+              <input matInput formControlName="recipientIdentifier" required />
+              <mat-icon matSuffix>person</mat-icon>
+              <mat-error
+                *ngIf="
+                  requestForm.get('recipientIdentifier')?.hasError('required')
+                "
+              >
+                Recipient is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field class="w-full">
+              <mat-label>Amount</mat-label>
+              <input matInput type="number" formControlName="amount" required />
+              <span matPrefix>$&nbsp;</span>
+              <mat-error
+                *ngIf="requestForm.get('amount')?.hasError('required')"
+              >
+                Amount is required
+              </mat-error>
+              <mat-error *ngIf="requestForm.get('amount')?.hasError('min')">
+                Amount must be greater than 0
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field class="w-full">
+            <mat-label>Description (optional)</mat-label>
+            <textarea
+              matInput
+              formControlName="description"
+              rows="2"
+            ></textarea>
+          </mat-form-field>
+
+          <div class="flex justify-end mt-4">
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              [disabled]="requestForm.invalid || isProcessing"
+            >
+              <mat-spinner
+                *ngIf="isProcessing"
+                [diameter]="20"
+                class="mr-2 inline-block"
+              ></mat-spinner>
+              Send Request
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Incoming Requests Card -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-medium text-gray-800">
+            Incoming Money Requests
+          </h3>
+          <div>
+            <button mat-button [matMenuTriggerFor]="menu">
+              <span>{{ filterStatus }}</span>
+              <mat-icon>arrow_drop_down</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="filterRequests('All')">All</button>
+              <button mat-menu-item (click)="filterRequests('Pending')">
+                Pending
+              </button>
+              <button mat-menu-item (click)="filterRequests('Completed')">
+                Completed
+              </button>
+              <button mat-menu-item (click)="filterRequests('Rejected')">
+                Rejected
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+
+        <div *ngIf="loadingIncoming" class="flex justify-center py-12">
+          <mat-spinner [diameter]="40"></mat-spinner>
+        </div>
+
+        <div
+          *ngIf="!loadingIncoming && filteredIncomingRequests.length === 0"
+          class="py-12 text-center text-gray-500"
+        >
+          <mat-icon class="text-6xl opacity-20">inbox</mat-icon>
+          <p class="mt-2">No incoming requests found</p>
+        </div>
+
+        <div *ngIf="!loadingIncoming && filteredIncomingRequests.length > 0">
+          <div
+            *ngFor="let request of filteredIncomingRequests"
+            class="border-b border-gray-100 last:border-0 py-4"
+          >
+            <div class="flex items-start justify-between">
+              <div class="flex items-center">
+                <div
+                  class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-3"
+                >
+                  <mat-icon class="text-indigo-600">person</mat-icon>
+                </div>
+                <div>
+                  <div class="font-medium text-gray-900">
+                    {{ request.requesterName }}
+                  </div>
+                  <div class="text-sm text-gray-500">
+                    {{ request.timestamp | date : "MMM d, y, h:mm a" }}
+                  </div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="font-medium text-gray-900">
+                  {{ request.amount | currency }}
+                </div>
+                <div
+                  *ngIf="isNotPendingStatus(request.status)"
+                  class="text-xs mt-1"
+                >
+                  <span
+                    class="px-2 py-1 rounded-full text-xs"
+                    [ngClass]="{
+                      'bg-green-100 text-green-800': isCompletedStatus(
+                        request.status
+                      ),
+                      'bg-red-100 text-red-800': isRejectedOrExpiredStatus(
+                        request.status
+                      ),
+                      'bg-yellow-100 text-yellow-800': isPendingStatus(
+                        request.status
+                      )
+                    }"
+                  >
+                    {{ request.status }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-2 text-sm text-gray-700">
+              {{ request.description || "No description provided" }}
+            </div>
+            <div
+              *ngIf="isPendingStatus(request.status)"
+              class="mt-4 flex justify-end gap-2"
+            >
+              <button
+                mat-stroked-button
+                color="warn"
+                (click)="rejectRequest(request.id)"
+              >
+                Reject
+              </button>
+              <button
+                mat-flat-button
+                color="primary"
+                (click)="payRequest(request)"
+              >
+                Pay
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Sent Requests -->
+  <div class="bg-white rounded-lg shadow-md overflow-hidden h-fit">
+    <div class="p-6">
+      <h3 class="text-lg font-medium text-gray-800 mb-4">Your Requests</h3>
+
+      <div *ngIf="loadingOutgoing" class="flex justify-center py-12">
+        <mat-spinner [diameter]="40"></mat-spinner>
+      </div>
+
+      <div
+        *ngIf="!loadingOutgoing && outgoingRequests.length === 0"
+        class="py-12 text-center text-gray-500"
+      >
+        <mat-icon class="text-6xl opacity-20">send</mat-icon>
+        <p class="mt-2">No money requests sent</p>
+      </div>
+
+      <div
+        *ngIf="!loadingOutgoing && outgoingRequests.length > 0"
+        class="divide-y divide-gray-100"
+      >
+        <div
+          *ngFor="let request of outgoingRequests"
+          class="py-4 first:pt-0 last:pb-0"
+        >
+          <div class="flex items-start justify-between">
+            <div class="flex items-start">
+              <div class="mr-3">
+                <div
+                  class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center"
+                >
+                  <mat-icon class="text-gray-600 text-sm">person</mat-icon>
+                </div>
+              </div>
+              <div>
+                <div class="font-medium text-gray-800">
+                  {{ request.recipientName }}
+                </div>
+                <div class="text-xs text-gray-500">
+                  {{ request.timestamp | date : "MMM d, y" }}
+                </div>
+                <div class="text-sm mt-1">
+                  {{ request.description || "No description" }}
+                </div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="font-medium text-gray-900">
+                {{ request.amount | currency }}
+              </div>
+              <div class="mt-1">
+                <span
+                  class="px-2 py-1 rounded-full text-xs"
+                  [ngClass]="{
+                    'bg-green-100 text-green-800': isCompletedStatus(
+                      request.status
+                    ),
+                    'bg-red-100 text-red-800': isRejectedOrExpiredStatus(
+                      request.status
+                    ),
+                    'bg-yellow-100 text-yellow-800': isPendingStatus(
+                      request.status
+                    )
+                  }"
+                >
+                  {{ request.status }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div
+            *ngIf="isPendingStatus(request.status)"
+            class="mt-3 flex justify-end"
+          >
+            <button mat-button color="warn" (click)="cancelRequest(request.id)">
+              <mat-icon class="text-sm mr-1">cancel</mat-icon> Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Dialog -->
+<ng-template #paymentDialogTmpl>
+  <div *ngIf="selectedRequest">
+    <h2 mat-dialog-title>Pay Money Request</h2>
+    <div mat-dialog-content class="space-y-4">
+      <div class="text-center py-4">
+        <div class="font-medium text-gray-700">
+          {{ selectedRequest.requesterName }} is requesting
+        </div>
+        <div class="text-2xl font-bold text-indigo-700">
+          {{ selectedRequest.amount | currency }}
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <div>
+        <div class="text-sm text-gray-500">Description</div>
+        <div class="font-medium">
+          {{ selectedRequest.description || "No description provided" }}
+        </div>
+      </div>
+
+      <mat-form-field class="w-full mt-4">
+        <mat-label>Payment Method</mat-label>
+        <mat-select [formControl]="paymentMethodControl">
+          <mat-option value="WALLET">Wallet Balance</mat-option>
+          <mat-option *ngFor="let method of paymentMethods" [value]="method.id">
+            {{ method.name }} ({{
+              method.type === "CARD"
+                ? "•••• " + method.lastFourDigits
+                : "ending in " + method.lastFourDigits
+            }})
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div
+        *ngIf="paymentMethodControl.value === 'WALLET'"
+        class="text-sm flex items-center justify-between"
+      >
+        <span class="text-gray-700">Wallet Balance:</span>
+        <span
+          [ngClass]="{ 'text-red-600': walletBalance < selectedRequest.amount }"
+        >
+          {{ walletBalance | currency }}
+        </span>
+      </div>
+
+      <div
+        *ngIf="
+          paymentMethodControl.value === 'WALLET' &&
+          walletBalance < selectedRequest.amount
+        "
+        class="text-xs text-red-600 mt-1"
+      >
+        Insufficient balance. Please select another payment method.
+      </div>
+    </div>
+    <div mat-dialog-actions class="flex justify-end">
+      <button mat-button mat-dialog-close>Cancel</button>
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="confirmPayment()"
+        [disabled]="
+          paymentProcessing ||
+          (paymentMethodControl.value === 'WALLET' &&
+            walletBalance < selectedRequest.amount)
+        "
+      >
+        <mat-spinner
+          *ngIf="paymentProcessing"
+          [diameter]="20"
+          class="mr-2 inline-block"
+        ></mat-spinner>
+        Pay {{ selectedRequest.amount | currency }}
+      </button>
+    </div>
+  </div>
+</ng-template>

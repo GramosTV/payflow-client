@@ -1,0 +1,539 @@
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <!-- Wallet Balance Card -->
+  <div class="md:col-span-2 bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="bg-gradient-to-r from-indigo-600 to-blue-500 p-8">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-medium text-white">Wallet Balance</h3>
+        <button mat-icon-button color="white" aria-label="Refresh">
+          <mat-icon class="text-white" (click)="loadWallet()">refresh</mat-icon>
+        </button>
+      </div>
+
+      <div *ngIf="loading" class="flex justify-center py-8">
+        <mat-spinner [diameter]="40"></mat-spinner>
+      </div>
+
+      <div *ngIf="!loading && wallet" class="text-center">
+        <div class="text-4xl font-bold text-white mb-1">
+          {{ wallet.balance | currency }}
+        </div>
+        <div class="text-sm text-indigo-100">Available Balance</div>
+
+        <div class="mt-6 flex justify-center space-x-3">
+          <button
+            mat-raised-button
+            class="bg-white text-indigo-700"
+            (click)="openAddMoneyDialog()"
+          >
+            <mat-icon>add</mat-icon> Add Money
+          </button>
+          <button
+            mat-stroked-button
+            class="border-white text-white"
+            (click)="openWithdrawDialog()"
+          >
+            <mat-icon>arrow_forward</mat-icon> Withdraw
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <h4 class="font-medium text-gray-800 mb-4">Quick Stats</h4>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-gray-50 p-4 rounded-lg text-center">
+          <p class="text-gray-500 text-sm">This Month</p>
+          <p class="text-indigo-600 text-2xl font-semibold mt-1">
+            {{ monthlyStats.spent | currency }}
+          </p>
+          <p class="text-gray-600 text-xs mt-1">Spent</p>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded-lg text-center">
+          <p class="text-gray-500 text-sm">This Month</p>
+          <p class="text-green-600 text-2xl font-semibold mt-1">
+            {{ monthlyStats.received | currency }}
+          </p>
+          <p class="text-gray-600 text-xs mt-1">Received</p>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded-lg text-center">
+          <p class="text-gray-500 text-sm">Total Transactions</p>
+          <p class="text-blue-600 text-2xl font-semibold mt-1">
+            {{ monthlyStats.count }}
+          </p>
+          <p class="text-gray-600 text-xs mt-1">This Month</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Methods Card -->
+  <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-medium text-gray-800">Payment Methods</h3>
+        <button
+          mat-icon-button
+          color="primary"
+          aria-label="Add payment method"
+          (click)="openAddPaymentMethodDialog()"
+        >
+          <mat-icon>add_circle</mat-icon>
+        </button>
+      </div>
+
+      <div *ngIf="loading" class="flex justify-center py-8">
+        <mat-spinner [diameter]="30"></mat-spinner>
+      </div>
+
+      <div
+        *ngIf="!loading && paymentMethods.length === 0"
+        class="py-8 text-center text-gray-500"
+      >
+        <mat-icon class="text-4xl opacity-20">credit_card</mat-icon>
+        <p class="mt-2">No payment methods added</p>
+        <button
+          mat-stroked-button
+          color="primary"
+          class="mt-4"
+          (click)="openAddPaymentMethodDialog()"
+        >
+          Add Payment Method
+        </button>
+      </div>
+
+      <div *ngIf="!loading && paymentMethods.length > 0">
+        <div
+          *ngFor="let method of paymentMethods"
+          class="mb-4 last:mb-0 border rounded-lg p-3 cursor-pointer hover:bg-gray-50"
+        >
+          <div class="flex items-center">
+            <div
+              class="w-10 h-10 rounded-full flex items-center justify-center mr-3"
+              [ngClass]="{
+                'bg-blue-100': method.type === 'CARD',
+                'bg-green-100': method.type === 'BANK_ACCOUNT'
+              }"
+            >
+              <mat-icon
+                [ngClass]="{
+                  'text-blue-600': method.type === 'CARD',
+                  'text-green-600': method.type === 'BANK_ACCOUNT'
+                }"
+              >
+                {{ method.type === "CARD" ? "credit_card" : "account_balance" }}
+              </mat-icon>
+            </div>
+            <div>
+              <p class="font-medium text-gray-800">{{ method.name }}</p>
+              <p class="text-xs text-gray-500">
+                {{
+                  method.type === "CARD"
+                    ? "•••• •••• •••• " + method.lastFourDigits
+                    : "Ending in " + method.lastFourDigits
+                }}
+              </p>
+            </div>
+          </div>
+          <div class="mt-2 flex justify-end">
+            <button
+              mat-icon-button
+              color="warn"
+              (click)="removePaymentMethod(method.id)"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaction History -->
+  <div class="md:col-span-3 bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-medium text-gray-800">Recent Transactions</h3>
+        <a
+          routerLink="/transactions"
+          class="text-sm text-indigo-600 hover:text-indigo-800"
+          >View All</a
+        >
+      </div>
+
+      <div *ngIf="loading" class="flex justify-center py-8">
+        <mat-spinner [diameter]="40"></mat-spinner>
+      </div>
+
+      <div
+        *ngIf="!loading && transactions.length === 0"
+        class="py-8 text-center text-gray-500"
+      >
+        <mat-icon class="text-5xl opacity-20">receipt_long</mat-icon>
+        <p class="mt-2">No transaction history</p>
+      </div>
+
+      <!-- Transaction Table -->
+      <div *ngIf="!loading && transactions.length > 0" class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Type
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Description
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Date
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Amount
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Status
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr *ngFor="let transaction of transactions">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                  <div
+                    class="w-8 h-8 rounded-full flex items-center justify-center"
+                    [ngClass]="{
+                      'bg-green-100':
+                        transaction.type === 'DEPOSIT' ||
+                        transaction.type === 'RECEIVED',
+                      'bg-red-100':
+                        transaction.type === 'WITHDRAWAL' ||
+                        transaction.type === 'SENT',
+                      'bg-blue-100': transaction.type === 'TRANSFER'
+                    }"
+                  >
+                    <mat-icon
+                      class="text-sm"
+                      [ngClass]="{
+                        'text-green-600':
+                          transaction.type === 'DEPOSIT' ||
+                          transaction.type === 'RECEIVED',
+                        'text-red-600':
+                          transaction.type === 'WITHDRAWAL' ||
+                          transaction.type === 'SENT',
+                        'text-blue-600': transaction.type === 'TRANSFER'
+                      }"
+                    >
+                      {{
+                        transaction.type === "DEPOSIT" ||
+                        transaction.type === "RECEIVED"
+                          ? "arrow_downward"
+                          : transaction.type === "WITHDRAWAL" ||
+                            transaction.type === "SENT"
+                          ? "arrow_upward"
+                          : "swap_horiz"
+                      }}
+                    </mat-icon>
+                  </div>
+                  <span class="ml-2 text-sm text-gray-700">
+                    {{ transaction.type }}
+                  </span>
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900">
+                  {{ transaction.description }}
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {{ transaction.timestamp | date : "medium" }}
+              </td>
+              <td
+                class="px-6 py-4 whitespace-nowrap text-right"
+                [ngClass]="{
+                  'text-green-600':
+                    transaction.type === 'DEPOSIT' ||
+                    transaction.type === 'RECEIVED',
+                  'text-red-600':
+                    transaction.type === 'WITHDRAWAL' ||
+                    transaction.type === 'SENT',
+                  'text-gray-900': transaction.type === 'TRANSFER'
+                }"
+              >
+                {{
+                  transaction.type === "DEPOSIT" ||
+                  transaction.type === "RECEIVED"
+                    ? "+"
+                    : transaction.type === "WITHDRAWAL" ||
+                      transaction.type === "SENT"
+                    ? "-"
+                    : ""
+                }}{{ transaction.amount | currency }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right">
+                <span
+                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                  [ngClass]="{
+                    'bg-green-100 text-green-800':
+                      transaction.status === 'COMPLETED',
+                    'bg-yellow-100 text-yellow-800':
+                      transaction.status === 'PENDING',
+                    'bg-red-100 text-red-800': transaction.status === 'FAILED'
+                  }"
+                >
+                  {{ transaction.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Money Dialog Template -->
+<ng-template #addMoneyDialogTmpl>
+  <h2 mat-dialog-title>Add Money to Wallet</h2>
+  <div mat-dialog-content>
+    <form [formGroup]="addMoneyForm">
+      <mat-form-field class="w-full">
+        <mat-label>Amount</mat-label>
+        <input matInput type="number" formControlName="amount" required />
+        <mat-error *ngIf="addMoneyForm.get('amount')?.hasError('required')">
+          Amount is required
+        </mat-error>
+        <mat-error *ngIf="addMoneyForm.get('amount')?.hasError('min')">
+          Amount must be greater than 0
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full mt-4">
+        <mat-label>Payment Method</mat-label>
+        <mat-select formControlName="paymentMethodId" required>
+          <mat-option *ngFor="let method of paymentMethods" [value]="method.id">
+            {{ method.name }} -
+            {{
+              method.type === "CARD"
+                ? "•••• " + method.lastFourDigits
+                : "Ending in " + method.lastFourDigits
+            }}
+          </mat-option>
+        </mat-select>
+        <mat-error
+          *ngIf="addMoneyForm.get('paymentMethodId')?.hasError('required')"
+        >
+          Payment method is required
+        </mat-error>
+      </mat-form-field>
+    </form>
+  </div>
+  <div mat-dialog-actions class="flex justify-end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="addMoney()"
+      [disabled]="addMoneyForm.invalid || isProcessing"
+    >
+      <mat-spinner
+        *ngIf="isProcessing"
+        [diameter]="20"
+        class="inline-block mr-2"
+      ></mat-spinner>
+      Add Money
+    </button>
+  </div>
+</ng-template>
+
+<!-- Withdraw Dialog Template -->
+<ng-template #withdrawDialogTmpl>
+  <h2 mat-dialog-title>Withdraw Money</h2>
+  <div mat-dialog-content>
+    <form [formGroup]="withdrawForm">
+      <mat-form-field class="w-full">
+        <mat-label>Amount</mat-label>
+        <input matInput type="number" formControlName="amount" required />
+        <mat-error *ngIf="withdrawForm.get('amount')?.hasError('required')">
+          Amount is required
+        </mat-error>
+        <mat-error *ngIf="withdrawForm.get('amount')?.hasError('min')">
+          Amount must be greater than 0
+        </mat-error>
+        <mat-error *ngIf="withdrawForm.get('amount')?.hasError('max')">
+          Amount exceeds your available balance
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full mt-4">
+        <mat-label>Destination Account</mat-label>
+        <mat-select formControlName="paymentMethodId" required>
+          <mat-option *ngFor="let method of paymentMethods" [value]="method.id">
+            {{ method.name }} -
+            {{
+              method.type === "CARD"
+                ? "•••• " + method.lastFourDigits
+                : "Ending in " + method.lastFourDigits
+            }}
+          </mat-option>
+        </mat-select>
+        <mat-error
+          *ngIf="withdrawForm.get('paymentMethodId')?.hasError('required')"
+        >
+          Destination account is required
+        </mat-error>
+      </mat-form-field>
+    </form>
+  </div>
+  <div mat-dialog-actions class="flex justify-end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="withdraw()"
+      [disabled]="withdrawForm.invalid || isProcessing"
+    >
+      <mat-spinner
+        *ngIf="isProcessing"
+        [diameter]="20"
+        class="inline-block mr-2"
+      ></mat-spinner>
+      Withdraw
+    </button>
+  </div>
+</ng-template>
+
+<!-- Add Payment Method Dialog Template -->
+<ng-template #addPaymentMethodDialogTmpl>
+  <h2 mat-dialog-title>Add Payment Method</h2>
+  <div mat-dialog-content>
+    <form [formGroup]="paymentMethodForm">
+      <mat-form-field class="w-full">
+        <mat-label>Payment Method Type</mat-label>
+        <mat-select formControlName="type" required>
+          <mat-option value="CARD">Credit/Debit Card</mat-option>
+          <mat-option value="BANK_ACCOUNT">Bank Account</mat-option>
+        </mat-select>
+        <mat-error *ngIf="paymentMethodForm.get('type')?.hasError('required')">
+          Payment method type is required
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full mt-4">
+        <mat-label>Name</mat-label>
+        <input matInput formControlName="name" required />
+        <mat-error *ngIf="paymentMethodForm.get('name')?.hasError('required')">
+          Name is required
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field
+        *ngIf="paymentMethodForm.get('type')?.value === 'CARD'"
+        class="w-full mt-4"
+      >
+        <mat-label>Card Number</mat-label>
+        <input matInput formControlName="cardNumber" required />
+        <mat-error
+          *ngIf="paymentMethodForm.get('cardNumber')?.hasError('required')"
+        >
+          Card number is required
+        </mat-error>
+        <mat-error
+          *ngIf="paymentMethodForm.get('cardNumber')?.hasError('pattern')"
+        >
+          Please enter a valid card number
+        </mat-error>
+      </mat-form-field>
+
+      <div
+        *ngIf="paymentMethodForm.get('type')?.value === 'CARD'"
+        class="flex space-x-4"
+      >
+        <mat-form-field class="w-1/2 mt-4">
+          <mat-label>Expiry Date (MM/YY)</mat-label>
+          <input
+            matInput
+            placeholder="MM/YY"
+            formControlName="expiryDate"
+            required
+          />
+          <mat-error
+            *ngIf="paymentMethodForm.get('expiryDate')?.hasError('required')"
+          >
+            Expiry date is required
+          </mat-error>
+          <mat-error
+            *ngIf="paymentMethodForm.get('expiryDate')?.hasError('pattern')"
+          >
+            Use format MM/YY
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="w-1/2 mt-4">
+          <mat-label>CVV</mat-label>
+          <input matInput formControlName="cvv" required />
+          <mat-error *ngIf="paymentMethodForm.get('cvv')?.hasError('required')">
+            CVV is required
+          </mat-error>
+          <mat-error *ngIf="paymentMethodForm.get('cvv')?.hasError('pattern')">
+            Invalid CVV
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div *ngIf="paymentMethodForm.get('type')?.value === 'BANK_ACCOUNT'">
+        <mat-form-field class="w-full mt-4">
+          <mat-label>Account Number</mat-label>
+          <input matInput formControlName="accountNumber" required />
+          <mat-error
+            *ngIf="paymentMethodForm.get('accountNumber')?.hasError('required')"
+          >
+            Account number is required
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="w-full mt-4">
+          <mat-label>Routing Number</mat-label>
+          <input matInput formControlName="routingNumber" required />
+          <mat-error
+            *ngIf="paymentMethodForm.get('routingNumber')?.hasError('required')"
+          >
+            Routing number is required
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </form>
+  </div>
+  <div mat-dialog-actions class="flex justify-end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="addPaymentMethod()"
+      [disabled]="paymentMethodForm.invalid || isProcessing"
+    >
+      <mat-spinner
+        *ngIf="isProcessing"
+        [diameter]="20"
+        class="inline-block mr-2"
+      ></mat-spinner>
+      Add Payment Method
+    </button>
+  </div>
+</ng-template>
