@@ -10,6 +10,7 @@ The PayFlow Client is the frontend application for the PayFlow Lite digital wall
 - **Money Requests**: Request payments from other users
 - **QR Code Payments**: Generate and scan QR codes for quick payments
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **Error Handling**: Robust error management with retry mechanisms for network issues
 
 ## Architecture
 
@@ -120,6 +121,42 @@ This client application is designed to work with the PayFlow Server API. To run 
 
 The default configuration assumes the server is running at `http://localhost:8090/api/v1`.
 
+## Recent Enhancements
+
+### QR Code Image Loading Optimization
+
+We've improved QR code image handling with several enhancements:
+
+1. **Retry Logic**: Added automatic retry mechanism for loading QR code images
+
+   ```typescript
+   private loadQrCodeImage(qrCodeId: number, retryCount: number = 0, maxRetries: number = 3): void {
+     this.qrCodeService.getQRCodeImageById(qrCodeId).subscribe({
+       next: (imageData) => { /* success handler */ },
+       error: (error) => {
+         if (retryCount < maxRetries) {
+           setTimeout(() => this.loadQrCodeImage(qrCodeId, retryCount + 1), 1000);
+         } else {
+           this.errorHandler.handleApiError(error, 'loading QR code');
+         }
+       }
+     });
+   }
+   ```
+
+2. **Enhanced Error Handling**: Improved error handling service with specific error messages for different scenarios
+
+   ```typescript
+   showSuccessMessage(message: string): void
+   showErrorMessage(message: string): void
+   ```
+
+3. **Loading States**: Added proper loading states to improve user experience during image loading
+
+### Backend Integration Fixes
+
+The client application has been updated to work with the improved QR code API endpoints in the server, which now properly handle lazy-loaded entity relationships.
+
 ## Styling
 
 The application uses:
@@ -157,6 +194,36 @@ The entire system (client and server) can be deployed using the Docker Compose f
 cd ../
 docker-compose up -d
 ```
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+1. **QR Code Image Loading Failures**:
+
+   - Check network connectivity to the API server
+   - Verify the QR code ID exists and is active
+   - Try refreshing the page or regenerating the QR code
+
+2. **Authentication Issues**:
+
+   - Clear browser cookies and local storage
+   - Check that the JWT token hasn't expired
+   - Verify API server is running and accessible
+
+3. **Wallet Balance Not Updating**:
+   - Refresh the wallet data using the refresh button
+   - Check for pending transactions that might affect your balance
+   - Verify the transaction was completed successfully
+
+## UI/UX Design
+
+The PayFlow client interface is designed with these principles:
+
+- **Clean and Minimal**: Focus on essential information
+- **Intuitive Navigation**: Easy access to key features
+- **Mobile First**: Responsive design works well on all screen sizes
+- **Feedback**: Clear notifications for all user actions
 
 ## Contributing
 
