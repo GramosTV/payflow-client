@@ -24,14 +24,22 @@ export class QRCodeService {
   getQRCodeById(id: number): Observable<QRCode> {
     return this.apiService.get<QRCode>(`qr-codes/${id}`);
   }
-
   /**
    * Get QR code image by ID
    */
   getQRCodeImageById(id: number): Observable<string> {
     return this.apiService
-      .get<{ imageData: string }>(`qr-codes/${id}/image`)
-      .pipe(map((response) => response.imageData));
+      .get<{ imageData: string; qrId: string; id: string }>(
+        `qr-codes/${id}/image`
+      )
+      .pipe(
+        map((response) => {
+          if (!response.imageData) {
+            throw new Error('Image data is missing in the response');
+          }
+          return response.imageData;
+        })
+      );
   }
 
   /**

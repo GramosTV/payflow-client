@@ -11,95 +11,67 @@ export class ErrorHandlingService {
   /**
    * Handle HTTP errors and show appropriate messages
    */
-  handleApiError(
-    error: HttpErrorResponse,
-    context: string = 'operation'
-  ): void {
-    let errorMessage = `Error during ${context}`;
+  handleApiError(error: any, action: string = 'performing action'): void {
+    console.error(`API Error:`, error);
 
-    if (error.error instanceof ErrorEvent) {
-      // Client-side error
-      errorMessage = `Client error: ${error.error.message}`;
-    } else {
-      // Server-side error
-      switch (error.status) {
-        case 400:
-          if (error.error?.message) {
-            errorMessage = error.error.message;
-          } else {
-            errorMessage = 'Invalid request. Please check your data.';
-          }
-          break;
-        case 401:
-          errorMessage = 'Authentication required. Please login again.';
-          break;
-        case 403:
-          errorMessage = "You don't have permission to perform this action.";
-          break;
-        case 404:
-          // Check if it's a wallet related error
-          if (error.error?.message?.includes('Wallet not found')) {
-            errorMessage = 'Wallet not found or invalid wallet number.';
-          } else if (context.toLowerCase().includes('qr')) {
-            errorMessage = 'QR code not found or expired.';
-          } else if (context.toLowerCase().includes('payment')) {
-            errorMessage = 'Payment information not found. Please try again.';
-          } else {
-            errorMessage = 'Resource not found.';
-          }
-          break;
-        case 409:
-          errorMessage = 'Conflict with existing data.';
-          break;
-        case 422:
-          if (error.error?.message?.includes('Insufficient balance')) {
-            errorMessage =
-              'Insufficient funds in your wallet for this transaction.';
-          } else if (error.error?.message?.includes('QR code')) {
-            errorMessage = 'This QR code is invalid, expired, or already used.';
-          } else {
-            errorMessage = error.error?.message || 'Invalid transaction data';
-          }
-          break;
-        case 500:
-          if (
-            context.toLowerCase().includes('payment') ||
-            context.toLowerCase().includes('transaction')
-          ) {
-            errorMessage = 'Transaction failed. Please try again later.';
-          } else {
-            errorMessage = 'Server error. Please try again later.';
-          }
-          break;
-        default:
-          errorMessage = `Error (${error.status}): ${
-            error.error?.message || 'Unknown error'
-          }`;
-          break;
+    let errorMessage = 'An unexpected error occurred. Please try again later.';
+
+    if (error instanceof HttpErrorResponse) {
+      // Check for server error (500)
+      if (error.status === 500) {
+        console.error(`Server error details:`, error.error);
+
+        // For QR code specific errors, try to parse the error message
+        if (action.includes('QR code') && error.error?.error) {
+          errorMessage = `Error with QR code: ${error.error.error}`;
+        } else {
+          errorMessage =
+            'The server encountered an error. Our team has been notified.';
+        }
+      }
+      // Authentication error (401)
+      else if (error.status === 401) {
+        errorMessage = 'Your session has expired. Please login again.';
+      }
+      // Forbidden (403)
+      else if (error.status === 403) {
+        errorMessage = 'You do not have permission to perform this action.';
+      }
+      // Not found (404)
+      else if (error.status === 404) {
+        errorMessage = 'The requested resource was not found.';
+      }
+      // Bad request (400)
+      else if (error.status === 400 && error.error?.error) {
+        errorMessage =
+          error.error.error ||
+          'Invalid request. Please check your data and try again.';
       }
     }
 
-    this.showErrorMessage(errorMessage);
-    console.error('API Error:', error);
-  }
-
-  /**
-   * Show error message in snackbar
-   */
-  showErrorMessage(message: string): void {
-    this.snackBar.open(message, 'Close', {
+    this.snackBar.open(`Error ${action}: ${errorMessage}`, 'Dismiss', {
       duration: 5000,
-      panelClass: ['bg-red-100', 'text-red-800'],
+      panelClass: ['error-snackbar'],
     });
   }
 
   /**
-   * Show success message in snackbar
+   * Show a success message to the user
    */
   showSuccessMessage(message: string): void {
-    this.snackBar.open(message, 'Close', {
-      duration: 3000,
-      panelClass: ['bg-green-100', 'text-green-800'],
+    this.snackBar.open(message, 'Dismiss', {
+      duration: 5000,
+      panelClass: ['success-snackbar'],
+    });
+  }
+
+  /**
+   * Show an error message to the user
+   */
+  showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Dismiss', {
+      duration: 5000,
+      panelClass: ['error-snackbar'],
     });
   }
 }

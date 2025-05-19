@@ -84,6 +84,9 @@ export class QrCodeComponent implements OnInit, OnDestroy, AfterViewInit {
   processingPayment = false;
   videoStream: MediaStream | null = null;
   scanInterval: any = null;
+  isLoadingQrImage = false;
+  qrCodeImageError: string | null = null;
+
   constructor(
     private formBuilder: FormBuilder,
     private qrCodeService: QRCodeService,
@@ -146,22 +149,15 @@ export class QrCodeComponent implements OnInit, OnDestroy, AfterViewInit {
       })
       .subscribe({
         next: (response) => {
-          // Get the QR code image from the server
-          this.qrCodeService.getQRCodeImageById(response.id!).subscribe({
-            next: (imageData) => {
-              this.qrCodeData = imageData;
-              this.generatedAmount = response.amount;
-              this.generatedDescription = response.description;
-              this.expirationTime = response.expiresAt
-                ? new Date(response.expiresAt)
-                : undefined;
-              this.generatingQR = false;
-            },
-            error: (error) => {
-              this.generatingQR = false;
-              this.errorHandler.handleApiError(error, 'loading QR code image');
-            },
-          });
+          // Store the QR code response data
+          this.generatedAmount = response.amount;
+          this.generatedDescription = response.description;
+          this.expirationTime = response.expiresAt
+            ? new Date(response.expiresAt)
+            : undefined;
+
+          // Get the QR code image from the server with retry logic
+          this.loadQrCodeImage(response.id!, 0);
         },
         error: (error) => {
           this.generatingQR = false;
@@ -313,5 +309,51 @@ export class QrCodeComponent implements OnInit, OnDestroy, AfterViewInit {
     this.scanResult = null;
     this.customAmount = undefined;
     this.paymentMethodId = 'WALLET';
+  }
+
+  /**
+   * Load QR code image with retry logic
+   * This helps handle potential LazyInitializationException on the server
+   */
+  private loadQrCodeImage(
+    qrCodeId: number,
+    retryCount: number = 0,
+    maxRetries: number = 3,
+    delay: number = 1000
+  ): void {
+    if (this.isLoadingQrImage) return;
+
+    this.isLoadingQrImage = true;
+    this.qrCodeImageError = null;
+
+    this.qrCodeService.getQRCodeImageById(qrCodeId).subscribe({
+      next: (imageData) => {
+        this.qrCodeData = imageData;
+        this.isLoadingQrImage = false;
+      },
+      error: (error) => {
+        console.error(
+          `Error loading QR code image (attempt ${retryCount + 1}):`,
+          error
+        );
+        this.isLoadingQrImage = false;
+
+        // If we haven't reached max retries, try again after delay
+        if (retryCount < maxRetries) {
+          this.qrCodeImageError = `Loading image (retry ${
+            retryCount + 1
+          }/${maxRetries})...`;
+          setTimeout(() => {
+            this.loadQrCodeImage(qrCodeId, retryCount + 1, maxRetries, delay);
+          }, delay);
+        } else {
+          this.qrCodeImageError =
+            'Failed to load QR code image. Please try again.';
+          this.errorHandler.showErrorMessage(
+            'Could not load QR code image after multiple attempts. Server may be busy.'
+          );
+        }
+      },
+    });
   }
 }

@@ -51,11 +51,47 @@
           </button>
         </div>
       </form>
-
       <!-- QR Code Display -->
-      <div *ngIf="qrCodeData" class="mt-8 flex flex-col items-center">
+      <div
+        *ngIf="qrCodeData || isLoadingQrImage || qrCodeImageError"
+        class="mt-8 flex flex-col items-center"
+      >
         <div class="p-4 border-2 border-indigo-200 rounded-lg">
-          <img [src]="qrCodeData" alt="Payment QR Code" class="w-64 h-64" />
+          <!-- Loading spinner -->
+          <div
+            *ngIf="isLoadingQrImage"
+            class="w-64 h-64 flex items-center justify-center"
+          >
+            <mat-spinner [diameter]="40"></mat-spinner>
+          </div>
+
+          <!-- Error message -->
+          <div
+            *ngIf="qrCodeImageError && !qrCodeData"
+            class="w-64 h-64 flex items-center justify-center"
+          >
+            <div class="text-center">
+              <mat-icon color="warn" class="text-4xl">error_outline</mat-icon>
+              <p class="text-sm text-red-500 mt-2">{{ qrCodeImageError }}</p>
+              <button
+                mat-stroked-button
+                color="primary"
+                class="mt-2"
+                (click)="generateQRCode()"
+              >
+                <mat-icon class="mr-1">refresh</mat-icon>
+                Retry
+              </button>
+            </div>
+          </div>
+
+          <!-- QR Code image -->
+          <img
+            *ngIf="qrCodeData"
+            [src]="qrCodeData"
+            alt="Payment QR Code"
+            class="w-64 h-64"
+          />
         </div>
 
         <div class="mt-4 text-center">
