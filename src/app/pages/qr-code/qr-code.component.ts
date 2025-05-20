@@ -139,6 +139,10 @@ export class QrCodeComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     this.generatingQR = true;
+    this.qrCodeData = undefined; // Clear previous QR code
+    this.isLoadingQrImage = false; // Reset loading state
+    this.qrCodeImageError = null; // Reset error state
+
     const { amount, description, expiration } = this.qrCodeForm.value;
     this.qrCodeService
       .generatePaymentQRCode({
@@ -330,6 +334,7 @@ export class QrCodeComponent implements OnInit, OnDestroy, AfterViewInit {
       next: (imageData) => {
         this.qrCodeData = imageData;
         this.isLoadingQrImage = false;
+        this.generatingQR = false; // Reset generatingQR here
       },
       error: (error) => {
         console.error(
@@ -352,6 +357,7 @@ export class QrCodeComponent implements OnInit, OnDestroy, AfterViewInit {
           this.errorHandler.showErrorMessage(
             'Could not load QR code image after multiple attempts. Server may be busy.'
           );
+          this.generatingQR = false; // Also reset here on final failure
         }
       },
     });

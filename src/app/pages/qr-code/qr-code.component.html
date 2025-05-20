@@ -8,8 +8,8 @@
       <form [formGroup]="qrCodeForm">
         <mat-form-field class="w-full">
           <mat-label>Amount</mat-label>
+          <span matPrefix class="flex items-center ml-4">$&nbsp;</span>
           <input matInput type="number" formControlName="amount" />
-          <span matPrefix>$&nbsp;</span>
           <mat-hint
             >Optional: Leave blank for recipient to enter amount</mat-hint
           >
@@ -149,7 +149,17 @@
           <div
             class="absolute top-0 left-0 w-full h-full flex items-center justify-center"
           >
-            <div class="w-40 h-40 border-2 border-white opacity-60"></div>
+            <!-- Show camera icon when not scanning -->
+            <mat-icon
+              *ngIf="!isScanning"
+              class="text-purple-300 w-32 h-32 opacity-75"
+              >photo_camera</mat-icon
+            >
+            <!-- Show viewfinder when scanning -->
+            <div
+              *ngIf="isScanning"
+              class="w-40 h-40 border-2 border-white opacity-60"
+            ></div>
           </div>
         </div>
 
