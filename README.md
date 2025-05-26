@@ -1,5 +1,7 @@
 # PayFlow Client
 
+**Server repository:** [https://github.com/GramosTV/payflow-server](https://github.com/GramosTV/payflow-server)
+
 The PayFlow Client is the frontend application for the PayFlow Lite digital wallet system. Built with Angular, it provides a responsive and intuitive user interface for managing digital transactions, wallet operations, money requests, and QR code payments.
 
 ## Features
