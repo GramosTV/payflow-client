@@ -5,6 +5,8 @@ import {
   ViewChild,
   ElementRef,
   AfterViewInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -21,6 +23,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { QRCodeService } from '../../services/qr-code.service';
 import { WalletService } from '../../services/wallet.service';
 import { ScannerService } from '../../services/scanner.service';
@@ -59,10 +63,13 @@ interface PaymentMethod {
   ],
   templateUrl: './qr-code.component.html',
   styleUrl: './qr-code.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QrCodeComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasElement') canvasElement!: ElementRef<HTMLCanvasElement>;
+
+  private destroy$ = new Subject<void>();
 
   qrCodeForm: FormGroup;
 
@@ -86,20 +93,39 @@ export class QrCodeComponent implements OnInit, OnDestroy, AfterViewInit {
   scanInterval: any = null;
   isLoadingQrImage = false;
   qrCodeImageError: string | null = null;
-
   constructor(
     private formBuilder: FormBuilder,
     private qrCodeService: QRCodeService,
     private walletService: WalletService,
     private snackBar: MatSnackBar,
     private scannerService: ScannerService,
-    private errorHandler: ErrorHandlingService
+    private errorHandler: ErrorHandlingService,
+    private cdr: ChangeDetectorRef
   ) {
     this.qrCodeForm = this.formBuilder.group({
-      amount: ['', [Validators.min(0.01)]],
-      description: [''],
-      expiration: ['30'], // Default 30 minutes
+      amount: [
+        '',
+        [
+          Validators.min(0.01),
+          Validators.pattern(/^\d+(\.\d{1,2})?$/), // Allow up to 2 decimal places
+        ],
+      ],
+      description: ['', [Validators.maxLength(100)]],
+      expiration: ['30', [Validators.required]], // Default 30 minutes
     });
+  }
+
+  // Form getters for cleaner template access
+  get amount() {
+    return this.qrCodeForm.get('amount');
+  }
+
+  get description() {
+    return this.qrCodeForm.get('description');
+  }
+
+  get expiration() {
+    return this.qrCodeForm.get('expiration');
   }
 
   ngOnInit(): void {
@@ -109,29 +135,38 @@ export class QrCodeComponent implements OnInit, OnDestroy, AfterViewInit {
   ngAfterViewInit(): void {
     // Initialize camera if available
   }
-
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
     this.stopScanning();
   }
-  loadWalletData(): void {
-    this.walletService.getWallet().subscribe({
-      next: (wallet) => {
-        this.wallet = wallet;
-        this.walletBalance = wallet.balance;
-      },
-      error: (error) => {
-        this.errorHandler.handleApiError(error, 'loading wallet data');
-      },
-    });
 
-    this.walletService.getPaymentMethods().subscribe({
-      next: (methods) => {
-        this.paymentMethods = methods;
-      },
-      error: (error) => {
-        this.errorHandler.handleApiError(error, 'loading payment methods');
-      },
-    });
+  loadWalletData(): void {
+    this.walletService
+      .getWallet()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (wallet) => {
+          this.wallet = wallet;
+          this.walletBalance = wallet.balance;
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          this.errorHandler.handleApiError(error, 'loading wallet data');
+        },
+      });
+
+    this.walletService
+      .getPaymentMethods()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (methods) => {
+          this.paymentMethods = methods;
+        },
+        error: (error) => {
+          this.errorHandler.handleApiError(error, 'loading payment methods');
+        },
+      });
   }
   generateQRCode(): void {
     if (this.qrCodeForm.invalid) {

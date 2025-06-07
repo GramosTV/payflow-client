@@ -2,6 +2,20 @@ import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
+enum ErrorCategory {
+  NETWORK = 'Network Error',
+  AUTHENTICATION = 'Authentication Error',
+  VALIDATION = 'Validation Error',
+  SERVER = 'Server Error',
+  UNKNOWN = 'Unknown Error',
+}
+
+interface ErrorDetails {
+  category: ErrorCategory;
+  message: string;
+  technical?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -11,67 +25,112 @@ export class ErrorHandlingService {
   /**
    * Handle HTTP errors and show appropriate messages
    */
-  handleApiError(error: any, action: string = 'performing action'): void {
-    console.error(`API Error:`, error);
+  handleApiError(error: any, operation: string): void {
+    const errorDetails = this.categorizeError(error);
+    console.error(`Error during ${operation}:`, errorDetails);
+    this.showErrorMessage(errorDetails.message);
+  }
 
-    let errorMessage = 'An unexpected error occurred. Please try again later.';
-
+  /**
+   * Categorize errors based on type and status
+   */
+  categorizeError(error: any): ErrorDetails {
     if (error instanceof HttpErrorResponse) {
-      // Check for server error (500)
-      if (error.status === 500) {
-        console.error(`Server error details:`, error.error);
+      if (!navigator.onLine) {
+        return {
+          category: ErrorCategory.NETWORK,
+          message: 'Please check your internet connection and try again',
+          technical: 'Network offline',
+        };
+      }
 
-        // For QR code specific errors, try to parse the error message
-        if (action.includes('QR code') && error.error?.error) {
-          errorMessage = `Error with QR code: ${error.error.error}`;
-        } else {
-          errorMessage =
-            'The server encountered an error. Our team has been notified.';
-        }
+      if (error.status === 0) {
+        return {
+          category: ErrorCategory.NETWORK,
+          message: 'Unable to connect to the server. Please try again later',
+          technical: `Status: ${error.status}, Message: ${error.message}`,
+        };
       }
-      // Authentication error (401)
-      else if (error.status === 401) {
-        errorMessage = 'Your session has expired. Please login again.';
+
+      if (error.status === 401) {
+        return {
+          category: ErrorCategory.AUTHENTICATION,
+          message: 'Your session has expired. Please log in again',
+          technical: `Status: ${error.status}, Message: ${error.message}`,
+        };
       }
-      // Forbidden (403)
-      else if (error.status === 403) {
-        errorMessage = 'You do not have permission to perform this action.';
+
+      if (error.status === 403) {
+        return {
+          category: ErrorCategory.AUTHENTICATION,
+          message: 'You do not have permission to perform this action',
+          technical: `Status: ${error.status}, Message: ${error.message}`,
+        };
       }
-      // Not found (404)
-      else if (error.status === 404) {
-        errorMessage = 'The requested resource was not found.';
+
+      if (error.status === 422 || error.status === 400) {
+        return {
+          category: ErrorCategory.VALIDATION,
+          message:
+            this.extractValidationMessage(error) ||
+            'Please check your input and try again',
+          technical: `Status: ${error.status}, Message: ${JSON.stringify(
+            error.error
+          )}`,
+        };
       }
-      // Bad request (400)
-      else if (error.status === 400 && error.error?.error) {
-        errorMessage =
-          error.error.error ||
-          'Invalid request. Please check your data and try again.';
+
+      if (error.status >= 500) {
+        return {
+          category: ErrorCategory.SERVER,
+          message: 'The server encountered an error. Please try again later',
+          technical: `Status: ${error.status}, Message: ${error.message}`,
+        };
       }
     }
 
-    this.snackBar.open(`Error ${action}: ${errorMessage}`, 'Dismiss', {
-      duration: 5000,
-      panelClass: ['error-snackbar'],
-    });
+    return {
+      category: ErrorCategory.UNKNOWN,
+      message: 'An unexpected error occurred. Please try again',
+      technical: error?.message || 'Unknown error',
+    };
   }
 
-  /**
-   * Show a success message to the user
-   */
+  private extractValidationMessage(error: HttpErrorResponse): string {
+    if (error.error?.message) {
+      return error.error.message;
+    }
+
+    if (error.error?.errors && Array.isArray(error.error.errors)) {
+      return error.error.errors.map((e: any) => e.message || e).join(', ');
+    }
+
+    return '';
+  }
   showSuccessMessage(message: string): void {
-    this.snackBar.open(message, 'Dismiss', {
+    this.snackBar.open(message, 'Close', {
       duration: 5000,
       panelClass: ['success-snackbar'],
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
     });
   }
 
-  /**
-   * Show an error message to the user
-   */
   showErrorMessage(message: string): void {
-    this.snackBar.open(message, 'Dismiss', {
-      duration: 5000,
+    this.snackBar.open(message, 'Close', {
+      duration: 8000,
       panelClass: ['error-snackbar'],
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
+    });
+  }
+
+  showWarningMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 6000,
+      panelClass: ['warning-snackbar'],
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
     });
   }
 }
