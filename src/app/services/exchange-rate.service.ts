@@ -26,10 +26,7 @@ export class ExchangeRateService {
   /**
    * Get exchange rate for specific currency pair
    */
-  getExchangeRate(
-    baseCurrency: string,
-    targetCurrency: string
-  ): Observable<ExchangeRate> {
+  getExchangeRate(baseCurrency: string, targetCurrency: string): Observable<ExchangeRate> {
     return this.apiService.get<ExchangeRate>(
       `public/exchange-rates/${baseCurrency}/${targetCurrency}`
     );
@@ -38,11 +35,7 @@ export class ExchangeRateService {
   /**
    * Convert amount between currencies
    */
-  convertCurrency(
-    amount: number,
-    fromCurrency: string,
-    toCurrency: string
-  ): Observable<number> {
+  convertCurrency(amount: number, fromCurrency: string, toCurrency: string): Observable<number> {
     return this.apiService.get<number>(
       `public/exchange-rates/convert?amount=${amount}&from=${fromCurrency}&to=${toCurrency}`
     );

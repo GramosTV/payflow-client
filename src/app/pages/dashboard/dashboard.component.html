@@ -4,9 +4,7 @@
     <div class="bg-gradient-to-r from-indigo-600 to-blue-500 p-6">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-lg font-medium text-white">My Wallet</h3>
-        <mat-icon class="text-white opacity-80"
-          >account_balance_wallet</mat-icon
-        >
+        <mat-icon class="text-white opacity-80">account_balance_wallet</mat-icon>
       </div>
 
       <div *ngIf="loading" class="flex justify-center py-4">
@@ -22,20 +20,10 @@
     </div>
 
     <div class="p-4 flex justify-between">
-      <button
-        mat-flat-button
-        color="primary"
-        routerLink="/wallet"
-        class="flex-1 mr-2"
-      >
+      <button mat-flat-button color="primary" routerLink="/wallet" class="flex-1 mr-2">
         <mat-icon>add</mat-icon> Add Money
       </button>
-      <button
-        mat-stroked-button
-        color="primary"
-        routerLink="/transactions"
-        class="flex-1 ml-2"
-      >
+      <button mat-stroked-button color="primary" routerLink="/transactions" class="flex-1 ml-2">
         <mat-icon>history</mat-icon> History
       </button>
     </div>
@@ -78,21 +66,14 @@
       </div>
 
       <div *ngIf="!loading && exchangeRates.length > 0" class="space-y-3">
-        <div
-          *ngFor="let rate of exchangeRates"
-          class="flex items-center justify-between"
-        >
+        <div *ngFor="let rate of exchangeRates" class="flex items-center justify-between">
           <div class="flex items-center">
-            <div
-              class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-2"
-            >
+            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-2">
               <span class="text-sm font-medium">{{ rate.currencyCode }}</span>
             </div>
             <span class="text-gray-700">{{ rate.currencyName }}</span>
           </div>
-          <span class="text-gray-900 font-medium">{{
-            rate.rate | number : "1.4-4"
-          }}</span>
+          <span class="text-gray-900 font-medium">{{ rate.rate | number: '1.4-4' }}</span>
         </div>
       </div>
     </div>
@@ -103,9 +84,7 @@
     <div class="p-6">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-medium text-gray-800">Recent Transactions</h3>
-        <a
-          routerLink="/transactions"
-          class="text-sm text-indigo-600 hover:text-indigo-800"
+        <a routerLink="/transactions" class="text-sm text-indigo-600 hover:text-indigo-800"
           >View All</a
         >
       </div>
@@ -131,35 +110,27 @@
             <div
               class="w-10 h-10 rounded-full"
               [ngClass]="{
-                'bg-green-100':
-                  transaction.type === 'DEPOSIT' ||
-                  transaction.type === 'RECEIVED',
-                'bg-red-100':
-                  transaction.type === 'WITHDRAWAL' ||
-                  transaction.type === 'SENT',
-                'bg-blue-100': transaction.type === 'TRANSFER'
+                'bg-green-100': transaction.type === 'DEPOSIT' || transaction.type === 'RECEIVED',
+                'bg-red-100': transaction.type === 'WITHDRAWAL' || transaction.type === 'SENT',
+                'bg-blue-100': transaction.type === 'TRANSFER',
               }"
             >
               <div class="w-full h-full flex items-center justify-center">
                 <mat-icon
                   [ngClass]="{
                     'text-green-600':
-                      transaction.type === 'DEPOSIT' ||
-                      transaction.type === 'RECEIVED',
+                      transaction.type === 'DEPOSIT' || transaction.type === 'RECEIVED',
                     'text-red-600':
-                      transaction.type === 'WITHDRAWAL' ||
-                      transaction.type === 'SENT',
-                    'text-blue-600': transaction.type === 'TRANSFER'
+                      transaction.type === 'WITHDRAWAL' || transaction.type === 'SENT',
+                    'text-blue-600': transaction.type === 'TRANSFER',
                   }"
                 >
                   {{
-                    transaction.type === "DEPOSIT" ||
-                    transaction.type === "RECEIVED"
-                      ? "arrow_downward"
-                      : transaction.type === "WITHDRAWAL" ||
-                        transaction.type === "SENT"
-                      ? "arrow_upward"
-                      : "swap_horiz"
+                    transaction.type === 'DEPOSIT' || transaction.type === 'RECEIVED'
+                      ? 'arrow_downward'
+                      : transaction.type === 'WITHDRAWAL' || transaction.type === 'SENT'
+                        ? 'arrow_upward'
+                        : 'swap_horiz'
                   }}
                 </mat-icon>
               </div>
@@ -169,30 +140,24 @@
                 {{ transaction.description || transaction.type }}
               </p>
               <p class="text-xs text-gray-500">
-                {{ transaction.timestamp | date : "medium" }}
+                {{ transaction.timestamp | date: 'medium' }}
               </p>
             </div>
           </div>
           <div>
             <p
               [ngClass]="{
-                'text-green-600':
-                  transaction.type === 'DEPOSIT' ||
-                  transaction.type === 'RECEIVED',
-                'text-red-600':
-                  transaction.type === 'WITHDRAWAL' ||
-                  transaction.type === 'SENT',
-                'text-gray-800': transaction.type === 'TRANSFER'
+                'text-green-600': transaction.type === 'DEPOSIT' || transaction.type === 'RECEIVED',
+                'text-red-600': transaction.type === 'WITHDRAWAL' || transaction.type === 'SENT',
+                'text-gray-800': transaction.type === 'TRANSFER',
               }"
             >
               {{
-                transaction.type === "DEPOSIT" ||
-                transaction.type === "RECEIVED"
-                  ? "+"
-                  : transaction.type === "WITHDRAWAL" ||
-                    transaction.type === "SENT"
-                  ? "-"
-                  : ""
+                transaction.type === 'DEPOSIT' || transaction.type === 'RECEIVED'
+                  ? '+'
+                  : transaction.type === 'WITHDRAWAL' || transaction.type === 'SENT'
+                    ? '-'
+                    : ''
               }}{{ transaction.amount | currency }}
             </p>
           </div>
@@ -206,9 +171,7 @@
     <div class="p-6">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-medium text-gray-800">Money Requests</h3>
-        <a
-          routerLink="/money-requests"
-          class="text-sm text-indigo-600 hover:text-indigo-800"
+        <a routerLink="/money-requests" class="text-sm text-indigo-600 hover:text-indigo-800"
           >View All</a
         >
       </div>
@@ -217,10 +180,7 @@
         <mat-spinner [diameter]="30"></mat-spinner>
       </div>
 
-      <div
-        *ngIf="!loading && pendingRequests.length === 0"
-        class="py-8 text-center text-gray-500"
-      >
+      <div *ngIf="!loading && pendingRequests.length === 0" class="py-8 text-center text-gray-500">
         <mat-icon class="text-4xl opacity-20">mark_email_unread</mat-icon>
         <p class="mt-2">No pending requests</p>
       </div>
@@ -231,17 +191,15 @@
           class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0"
         >
           <div class="flex items-center">
-            <div
-              class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center"
-            >
+            <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
               <mat-icon class="text-orange-600 text-sm">person</mat-icon>
             </div>
             <div class="ml-3">
               <p class="text-sm font-medium text-gray-800">
-                {{ request.requesterName || "User" }}
+                {{ request.requesterName || 'User' }}
               </p>
               <p class="text-xs text-gray-500">
-                {{ request.timestamp | date : "MMM d" }}
+                {{ request.timestamp | date: 'MMM d' }}
               </p>
             </div>
           </div>

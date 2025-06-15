@@ -1,5 +1,4 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { HttpHeaders } from '@angular/common/http';
 import { Observable, Subject, throwError } from 'rxjs';
 import { map, catchError, takeUntil } from 'rxjs/operators';
 import { ApiService } from './api.service';
@@ -40,22 +39,14 @@ export class TransactionService implements OnDestroy {
    * @param size Page size
    * @returns Observable of Page<Transaction>
    */
-  getUserTransactions(
-    page: number = 0,
-    size: number = 10
-  ): Observable<Page<Transaction>> {
-    return this.apiService
-      .get<Page<Transaction>>(`transactions?page=${page}&size=${size}`)
-      .pipe(
-        takeUntil(this.destroy$),
-        catchError((error) => {
-          this.errorHandlingService.handleApiError(
-            error,
-            'Failed to retrieve transactions'
-          );
-          return throwError(() => error);
-        })
-      );
+  getUserTransactions(page = 0, size = 10): Observable<Page<Transaction>> {
+    return this.apiService.get<Page<Transaction>>(`transactions?page=${page}&size=${size}`).pipe(
+      takeUntil(this.destroy$),
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to retrieve transactions');
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
@@ -64,18 +55,13 @@ export class TransactionService implements OnDestroy {
    * @returns Observable of Transaction array
    */
   getRecentTransactions(limit: number): Observable<Transaction[]> {
-    return this.apiService
-      .get<Transaction[]>(`transactions/recent?limit=${limit}`)
-      .pipe(
-        takeUntil(this.destroy$),
-        catchError((error) => {
-          this.errorHandlingService.handleApiError(
-            error,
-            'Failed to retrieve recent transactions'
-          );
-          return throwError(() => error);
-        })
-      );
+    return this.apiService.get<Transaction[]>(`transactions/recent?limit=${limit}`).pipe(
+      takeUntil(this.destroy$),
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to retrieve recent transactions');
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
@@ -85,12 +71,9 @@ export class TransactionService implements OnDestroy {
   getAllTransactions(): Observable<Transaction[]> {
     return this.apiService.get<Page<Transaction>>('transactions').pipe(
       takeUntil(this.destroy$),
-      map((page) => page.content),
-      catchError((error) => {
-        this.errorHandlingService.handleApiError(
-          error,
-          'Failed to retrieve all transactions'
-        );
+      map(page => page.content),
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to retrieve all transactions');
         return throwError(() => error);
       })
     );
@@ -102,19 +85,14 @@ export class TransactionService implements OnDestroy {
    * @returns Observable of Transaction array
    */
   getTransactions(limit: number): Observable<Transaction[]> {
-    return this.apiService
-      .get<Page<Transaction>>(`transactions?size=${limit}&page=0`)
-      .pipe(
-        takeUntil(this.destroy$),
-        map((page) => page.content),
-        catchError((error) => {
-          this.errorHandlingService.handleApiError(
-            error,
-            'Failed to retrieve transactions'
-          );
-          return throwError(() => error);
-        })
-      );
+    return this.apiService.get<Page<Transaction>>(`transactions?size=${limit}&page=0`).pipe(
+      takeUntil(this.destroy$),
+      map(page => page.content),
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to retrieve transactions');
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
@@ -123,18 +101,13 @@ export class TransactionService implements OnDestroy {
    * @returns Observable of Blob containing receipt data
    */
   downloadTransactionReceipt(transactionId: number): Observable<Blob> {
-    return this.apiService
-      .getBinary(`transactions/${transactionId}/receipt`)
-      .pipe(
-        takeUntil(this.destroy$),
-        catchError((error) => {
-          this.errorHandlingService.handleApiError(
-            error,
-            'Failed to download transaction receipt'
-          );
-          return throwError(() => error);
-        })
-      );
+    return this.apiService.getBinary(`transactions/${transactionId}/receipt`).pipe(
+      takeUntil(this.destroy$),
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to download transaction receipt');
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
@@ -145,7 +118,7 @@ export class TransactionService implements OnDestroy {
   getTransactionById(id: number): Observable<Transaction> {
     return this.apiService.get<Transaction>(`transactions/${id}`).pipe(
       takeUntil(this.destroy$),
-      catchError((error) => {
+      catchError(error => {
         this.errorHandlingService.handleApiError(
           error,
           `Failed to retrieve transaction with ID: ${id}`
@@ -161,25 +134,19 @@ export class TransactionService implements OnDestroy {
    * @param endDate End date for search range
    * @returns Observable of Transaction array
    */
-  searchTransactions(
-    startDate: Date,
-    endDate: Date
-  ): Observable<Transaction[]> {
+  searchTransactions(startDate: Date, endDate: Date): Observable<Transaction[]> {
     // Format dates as ISO strings (YYYY-MM-DD)
     const formattedStartDate = startDate.toISOString().split('T')[0];
     const formattedEndDate = endDate.toISOString().split('T')[0];
 
     return this.apiService
-      .get<Transaction[]>(
-        `transactions/search?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
-      )
+      .get<
+        Transaction[]
+      >(`transactions/search?startDate=${formattedStartDate}&endDate=${formattedEndDate}`)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.errorHandlingService.handleApiError(
-            error,
-            'Failed to search transactions'
-          );
+        catchError(error => {
+          this.errorHandlingService.handleApiError(error, 'Failed to search transactions');
           return throwError(() => error);
         })
       );

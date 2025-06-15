@@ -5,11 +5,7 @@ import { tap, catchError, map, takeUntil } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { ErrorHandlingService } from './error-handling.service';
 import { User } from '../models/user.model';
-import {
-  AuthResponse,
-  LoginRequest,
-  SignUpRequest,
-} from '../models/auth.model';
+import { AuthResponse, LoginRequest, SignUpRequest } from '../models/auth.model';
 import { JwtHelperService } from '@auth0/angular-jwt';
 
 @Injectable({
@@ -119,10 +115,7 @@ export class AuthService implements OnDestroy {
       }
 
       // Save expiry time for session recovery
-      localStorage.setItem(
-        this.TOKEN_EXPIRY_KEY,
-        expirationDate.getTime().toString()
-      );
+      localStorage.setItem(this.TOKEN_EXPIRY_KEY, expirationDate.getTime().toString());
 
       this.tokenExpirationTimer = setTimeout(() => {
         this.logout();
@@ -153,8 +146,8 @@ export class AuthService implements OnDestroy {
     const credentials: LoginRequest = { email, password };
     return this.apiService.post<AuthResponse>('auth/login', credentials).pipe(
       takeUntil(this.destroy$),
-      tap((response) => this.handleAuthentication(response)),
-      catchError((error) => {
+      tap(response => this.handleAuthentication(response)),
+      catchError(error => {
         this.errorHandlingService.handleApiError(error, 'Login failed');
         return throwError(() => error);
       })
@@ -169,8 +162,8 @@ export class AuthService implements OnDestroy {
   register(userData: SignUpRequest): Observable<AuthResponse> {
     return this.apiService.post<AuthResponse>('auth/signup', userData).pipe(
       takeUntil(this.destroy$),
-      tap((response) => this.handleAuthentication(response)),
-      catchError((error) => {
+      tap(response => this.handleAuthentication(response)),
+      catchError(error => {
         this.errorHandlingService.handleApiError(error, 'Registration failed');
         return throwError(() => error);
       })
@@ -210,11 +203,8 @@ export class AuthService implements OnDestroy {
   getUserProfile(): Observable<User> {
     return this.apiService.get<User>('users/me').pipe(
       takeUntil(this.destroy$),
-      catchError((error) => {
-        this.errorHandlingService.handleApiError(
-          error,
-          'Failed to retrieve user profile'
-        );
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to retrieve user profile');
         return throwError(() => error);
       })
     );
@@ -242,7 +232,7 @@ export class AuthService implements OnDestroy {
     if (expiresIn < fiveMinutesInMs) {
       return this.refreshToken().pipe(
         map(() => true),
-        catchError((error) => {
+        catchError(error => {
           console.error('Token refresh failed:', error);
           return of(false);
         })
@@ -259,8 +249,8 @@ export class AuthService implements OnDestroy {
   refreshToken(): Observable<AuthResponse> {
     return this.apiService.post<AuthResponse>('auth/refresh', {}).pipe(
       takeUntil(this.destroy$),
-      tap((response) => this.handleAuthentication(response)),
-      catchError((error) => {
+      tap(response => this.handleAuthentication(response)),
+      catchError(error => {
         if (error.status === 401) {
           // If refresh fails due to authentication, logout
           this.logout();
@@ -303,10 +293,7 @@ export class AuthService implements OnDestroy {
    * @param newPassword New password
    * @returns Observable of success message
    */
-  changePassword(
-    currentPassword: string,
-    newPassword: string
-  ): Observable<any> {
+  changePassword(currentPassword: string, newPassword: string): Observable<any> {
     return this.apiService
       .post<any>('users/change-password', {
         currentPassword,
@@ -314,11 +301,8 @@ export class AuthService implements OnDestroy {
       })
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.errorHandlingService.handleApiError(
-            error,
-            'Password change failed'
-          );
+        catchError(error => {
+          this.errorHandlingService.handleApiError(error, 'Password change failed');
           return throwError(() => error);
         })
       );

@@ -32,11 +32,8 @@ export class WalletService implements OnDestroy {
   getUserWallets(): Observable<Wallet[]> {
     return this.apiService.get<Wallet[]>('wallets').pipe(
       takeUntil(this.destroy$),
-      catchError((error) => {
-        this.errorHandlingService.handleApiError(
-          error,
-          'Failed to retrieve wallets'
-        );
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to retrieve wallets');
         return throwError(() => error);
       })
     );
@@ -49,11 +46,8 @@ export class WalletService implements OnDestroy {
   getWallet(): Observable<Wallet> {
     return this.apiService.get<Wallet>('wallets/primary').pipe(
       takeUntil(this.destroy$),
-      catchError((error) => {
-        this.errorHandlingService.handleApiError(
-          error,
-          'Failed to retrieve primary wallet'
-        );
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to retrieve primary wallet');
         return throwError(() => error);
       })
     );
@@ -67,11 +61,8 @@ export class WalletService implements OnDestroy {
   getWalletById(id: number): Observable<Wallet> {
     return this.apiService.get<Wallet>(`wallets/${id}`).pipe(
       takeUntil(this.destroy$),
-      catchError((error) => {
-        this.errorHandlingService.handleApiError(
-          error,
-          `Failed to retrieve wallet with ID: ${id}`
-        );
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, `Failed to retrieve wallet with ID: ${id}`);
         return throwError(() => error);
       })
     );
@@ -85,11 +76,8 @@ export class WalletService implements OnDestroy {
   createWallet(wallet: Partial<Wallet>): Observable<Wallet> {
     return this.apiService.post<Wallet>('wallets', wallet).pipe(
       takeUntil(this.destroy$),
-      catchError((error) => {
-        this.errorHandlingService.handleApiError(
-          error,
-          'Failed to create new wallet'
-        );
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to create new wallet');
         return throwError(() => error);
       })
     );
@@ -100,17 +88,11 @@ export class WalletService implements OnDestroy {
    * @param topUpData Object containing wallet number and amount
    * @returns Observable of Transaction
    */
-  topUpWallet(topUpData: {
-    walletNumber: string;
-    amount: number;
-  }): Observable<Transaction> {
+  topUpWallet(topUpData: { walletNumber: string; amount: number }): Observable<Transaction> {
     return this.apiService.post<Transaction>('wallets/topup', topUpData).pipe(
       takeUntil(this.destroy$),
-      catchError((error) => {
-        this.errorHandlingService.handleApiError(
-          error,
-          'Failed to top up wallet'
-        );
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to top up wallet');
         return throwError(() => error);
       })
     );
@@ -130,11 +112,8 @@ export class WalletService implements OnDestroy {
       })
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.errorHandlingService.handleApiError(
-            error,
-            'Failed to add money to wallet'
-          );
+        catchError(error => {
+          this.errorHandlingService.handleApiError(error, 'Failed to add money to wallet');
           return throwError(() => error);
         })
       );
@@ -154,11 +133,8 @@ export class WalletService implements OnDestroy {
       })
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.errorHandlingService.handleApiError(
-            error,
-            'Failed to withdraw money from wallet'
-          );
+        catchError(error => {
+          this.errorHandlingService.handleApiError(error, 'Failed to withdraw money from wallet');
           return throwError(() => error);
         })
       );
@@ -175,18 +151,13 @@ export class WalletService implements OnDestroy {
     amount: number;
     description?: string;
   }): Observable<Transaction> {
-    return this.apiService
-      .post<Transaction>('transactions/transfer', transferData)
-      .pipe(
-        takeUntil(this.destroy$),
-        catchError((error) => {
-          this.errorHandlingService.handleApiError(
-            error,
-            'Failed to transfer money'
-          );
-          return throwError(() => error);
-        })
-      );
+    return this.apiService.post<Transaction>('transactions/transfer', transferData).pipe(
+      takeUntil(this.destroy$),
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to transfer money');
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
@@ -196,11 +167,8 @@ export class WalletService implements OnDestroy {
   getPaymentMethods(): Observable<any[]> {
     return this.apiService.get<any[]>('payment-methods').pipe(
       takeUntil(this.destroy$),
-      catchError((error) => {
-        this.errorHandlingService.handleApiError(
-          error,
-          'Failed to retrieve payment methods'
-        );
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to retrieve payment methods');
         return throwError(() => error);
       })
     );
@@ -214,11 +182,8 @@ export class WalletService implements OnDestroy {
   addPaymentMethod(paymentMethod: any): Observable<any> {
     return this.apiService.post<any>('payment-methods', paymentMethod).pipe(
       takeUntil(this.destroy$),
-      catchError((error) => {
-        this.errorHandlingService.handleApiError(
-          error,
-          'Failed to add payment method'
-        );
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to add payment method');
         return throwError(() => error);
       })
     );
@@ -232,11 +197,8 @@ export class WalletService implements OnDestroy {
   removePaymentMethod(id: number): Observable<void> {
     return this.apiService.delete<void>(`payment-methods/${id}`).pipe(
       takeUntil(this.destroy$),
-      catchError((error) => {
-        this.errorHandlingService.handleApiError(
-          error,
-          'Failed to remove payment method'
-        );
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to remove payment method');
         return throwError(() => error);
       })
     );

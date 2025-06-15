@@ -71,12 +71,8 @@ export class ErrorHandlingService {
       if (error.status === 422 || error.status === 400) {
         return {
           category: ErrorCategory.VALIDATION,
-          message:
-            this.extractValidationMessage(error) ||
-            'Please check your input and try again',
-          technical: `Status: ${error.status}, Message: ${JSON.stringify(
-            error.error
-          )}`,
+          message: this.extractValidationMessage(error) || 'Please check your input and try again',
+          technical: `Status: ${error.status}, Message: ${JSON.stringify(error.error)}`,
         };
       }
 

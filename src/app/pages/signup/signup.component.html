@@ -1,17 +1,11 @@
-<div
-  class="min-h-screen flex items-center justify-center bg-gray-100 py-12 px-4 sm:px-6 lg:px-8"
->
+<div class="min-h-screen flex items-center justify-center bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
   <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-lg">
     <div class="text-center">
       <h2 class="mt-6 text-3xl font-extrabold text-indigo-800">PayFlow Lite</h2>
       <p class="mt-2 text-sm text-gray-600">Create your account</p>
     </div>
 
-    <form
-      class="mt-8 space-y-6"
-      [formGroup]="signupForm"
-      (ngSubmit)="onSubmit()"
-    >
+    <form class="mt-8 space-y-6" [formGroup]="signupForm" (ngSubmit)="onSubmit()">
       <!-- Alert for errors -->
       <div
         *ngIf="error"
@@ -58,15 +52,8 @@
             formControlName="password"
             required
           />
-          <button
-            mat-icon-button
-            matSuffix
-            (click)="hidePassword = !hidePassword"
-            tabindex="-1"
-          >
-            <mat-icon>{{
-              hidePassword ? "visibility_off" : "visibility"
-            }}</mat-icon>
+          <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" tabindex="-1">
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
           <mat-error *ngIf="signupForm.get('password')?.hasError('required')">
             Password is required
@@ -93,13 +80,9 @@
             (click)="hideConfirmPassword = !hideConfirmPassword"
             tabindex="-1"
           >
-            <mat-icon>{{
-              hideConfirmPassword ? "visibility_off" : "visibility"
-            }}</mat-icon>
+            <mat-icon>{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
-          <mat-error
-            *ngIf="signupForm.get('confirmPassword')?.hasError('required')"
-          >
+          <mat-error *ngIf="signupForm.get('confirmPassword')?.hasError('required')">
             Please confirm your password
           </mat-error>
           <mat-error *ngIf="signupForm.hasError('passwordsDoNotMatch')">
@@ -123,16 +106,11 @@
         <mat-checkbox formControlName="agreeToTerms" required>
           <span class="text-sm text-gray-600"
             >I agree to the
-            <a href="#" class="text-indigo-600 hover:text-indigo-500"
-              >Terms and Conditions</a
-            >
+            <a href="#" class="text-indigo-600 hover:text-indigo-500">Terms and Conditions</a>
           </span>
         </mat-checkbox>
         <mat-error
-          *ngIf="
-            signupForm.get('agreeToTerms')?.invalid &&
-            signupForm.get('agreeToTerms')?.touched
-          "
+          *ngIf="signupForm.get('agreeToTerms')?.invalid && signupForm.get('agreeToTerms')?.touched"
           class="text-xs text-red-600 mt-1"
         >
           You must agree to the terms and conditions
@@ -146,18 +124,11 @@
           [disabled]="loading || !signupForm.valid"
           class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
-          <span
-            *ngIf="loading"
-            class="absolute left-0 inset-y-0 flex items-center pl-3"
-          >
+          <span *ngIf="loading" class="absolute left-0 inset-y-0 flex items-center pl-3">
             <mat-spinner [diameter]="20"></mat-spinner>
           </span>
-          <span
-            *ngIf="!loading"
-            class="absolute left-0 inset-y-0 flex items-center pl-3"
-          >
-            <mat-icon
-              class="h-5 w-5 text-indigo-500 group-hover:text-indigo-400"
+          <span *ngIf="!loading" class="absolute left-0 inset-y-0 flex items-center pl-3">
+            <mat-icon class="h-5 w-5 text-indigo-500 group-hover:text-indigo-400"
               >how_to_reg</mat-icon
             >
           </span>
@@ -168,10 +139,7 @@
       <div class="text-center mt-4">
         <p class="text-sm text-gray-600">
           Already have an account?
-          <a
-            routerLink="/login"
-            class="font-medium text-indigo-600 hover:text-indigo-500"
-          >
+          <a routerLink="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
             Sign in
           </a>
         </p>

@@ -98,9 +98,8 @@ export class SignupComponent implements OnInit {
             queryParams: { registered: 'true' },
           });
         },
-        error: (error) => {
-          this.error =
-            error.message || 'Registration failed. Please try again.';
+        error: error => {
+          this.error = error.message || 'Registration failed. Please try again.';
           this.loading = false;
         },
       });

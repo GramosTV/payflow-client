@@ -1,5 +1,14 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
+
+interface QRCodeResult {
+  qrId: string;
+  walletNumber?: string;
+  currency?: string;
+  amount?: number;
+  isAmountFixed?: boolean;
+  description?: string;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -9,12 +18,10 @@ export class ScannerService {
   private canvasElement: HTMLCanvasElement | null = null;
   private canvasContext: CanvasRenderingContext2D | null = null;
   private scannerEnabled = false;
-  private scanInterval: any;
+  private scanInterval: ReturnType<typeof setInterval> | null = null;
 
   private scanResultSubject = new BehaviorSubject<string | null>(null);
   public scanResult$ = this.scanResultSubject.asObservable();
-
-  constructor() {}
 
   /**
    * Start the scanner with the provided video element
@@ -33,7 +40,7 @@ export class ScannerService {
         this.startScanningLoop();
         return true;
       })
-      .catch((error) => {
+      .catch(error => {
         console.error('Failed to start scanner:', error);
         return false;
       });
@@ -51,7 +58,7 @@ export class ScannerService {
 
     if (this.videoElement && this.videoElement.srcObject) {
       const tracks = (this.videoElement.srcObject as MediaStream).getTracks();
-      tracks.forEach((track) => track.stop());
+      tracks.forEach(track => track.stop());
       this.videoElement.srcObject = null;
     }
   }
@@ -70,9 +77,9 @@ export class ScannerService {
       },
     };
 
-    return navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+    return navigator.mediaDevices.getUserMedia(constraints).then(stream => {
       this.videoElement!.srcObject = stream;
-      return new Promise<void>((resolve) => {
+      return new Promise<void>(resolve => {
         this.videoElement!.onloadedmetadata = () => {
           this.videoElement!.play();
           resolve();
@@ -94,12 +101,7 @@ export class ScannerService {
    * Scan a single frame from the video
    */
   private scanFrame(): void {
-    if (
-      !this.scannerEnabled ||
-      !this.videoElement ||
-      !this.canvasElement ||
-      !this.canvasContext
-    ) {
+    if (!this.scannerEnabled || !this.videoElement || !this.canvasElement || !this.canvasContext) {
       return;
     }
 
@@ -108,8 +110,7 @@ export class ScannerService {
     if (Math.random() > 0.8) {
       // Simulate a QR code found - in a real app, this would decode the actual QR content
       this.processQrCodeContent(
-        'payflow://payment?qr_id=QR-' +
-          Math.random().toString(36).substring(2, 10)
+        'payflow://payment?qr_id=QR-' + Math.random().toString(36).substring(2, 10)
       );
     }
   }
@@ -147,24 +148,28 @@ export class ScannerService {
       const url = new URL(qrContent.replace('payflow://', 'https://'));
       const params = new URLSearchParams(url.search);
 
-      const result: any = {
+      const result: QRCodeResult = {
         qrId: params.get('qr_id') || '',
       };
 
       if (params.has('wallet')) {
-        result.walletNumber = params.get('wallet');
+        const wallet = params.get('wallet');
+        if (wallet) result.walletNumber = wallet;
       }
 
       if (params.has('currency')) {
-        result.currency = params.get('currency');
+        const currency = params.get('currency');
+        if (currency) result.currency = currency;
       }
 
       if (params.has('amount')) {
-        result.amount = parseFloat(params.get('amount')!);
+        const amount = params.get('amount');
+        if (amount) result.amount = parseFloat(amount);
       }
 
       if (params.has('description')) {
-        result.description = params.get('description');
+        const description = params.get('description');
+        if (description) result.description = description;
       }
 
       return result;

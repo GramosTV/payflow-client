@@ -3,10 +3,11 @@ import {
   HttpHandlerFn,
   HttpInterceptorFn,
   HttpErrorResponse,
+  HttpEvent,
 } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { throwError, Observable, from } from 'rxjs';
-import { catchError, switchMap, tap, finalize } from 'rxjs/operators';
+import { catchError, switchMap } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
 import { ErrorHandlingService } from '../services/error-handling.service';
@@ -33,25 +34,17 @@ export const authInterceptor: HttpInterceptorFn = (
     request.url.includes('auth/refresh');
 
   // Don't intercept requests to external domains
-  const isApiRequest =
-    request.url.startsWith('/api') || !request.url.startsWith('http');
+  const isApiRequest = request.url.startsWith('/api') || !request.url.startsWith('http');
 
   if (!isApiRequest) {
     return next(request);
   }
 
   return from(prepareRequest(request, authService, isAuthUrl)).pipe(
-    switchMap((preparedRequest) =>
+    switchMap(preparedRequest =>
       next(preparedRequest).pipe(
         catchError((error: HttpErrorResponse) =>
-          handleRequestError(
-            error,
-            request,
-            next,
-            authService,
-            router,
-            errorHandlingService
-          )
+          handleRequestError(error, request, next, authService, router, errorHandlingService)
         )
       )
     )
@@ -91,9 +84,7 @@ async function prepareRequest(
 /**
  * Add security-related HTTP headers
  */
-function addSecurityHeaders(
-  request: HttpRequest<unknown>
-): HttpRequest<unknown> {
+function addSecurityHeaders(request: HttpRequest<unknown>): HttpRequest<unknown> {
   return request.clone({
     setHeaders: {
       ...request.headers,
@@ -114,7 +105,7 @@ function handleRequestError(
   authService: AuthService,
   router: Router,
   errorHandlingService: ErrorHandlingService
-): Observable<any> {
+): Observable<HttpEvent<unknown>> {
   // Handle authentication errors
   if (error.status === 401) {
     // If we get a 401 during token refresh, logout and redirect

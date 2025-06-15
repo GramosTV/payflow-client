@@ -19,18 +19,12 @@ import { ExchangeRate } from '../../models/exchange-rate.model';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-  ],
+  imports: [CommonModule, RouterModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
 export class DashboardComponent implements OnInit {
-  loading: boolean = true;
+  loading = true;
   wallet: Wallet | null = null;
   recentTransactions: Transaction[] = [];
   pendingRequests: MoneyRequest[] = [];
@@ -56,14 +50,14 @@ export class DashboardComponent implements OnInit {
       requests: this.moneyRequestService.getPendingRequests(),
       rates: this.exchangeRateService.getExchangeRates(),
     }).subscribe({
-      next: (result) => {
+      next: result => {
         this.wallet = result.wallet;
         this.recentTransactions = result.transactions;
         this.pendingRequests = result.requests;
         this.exchangeRates = result.rates;
         this.loading = false;
       },
-      error: (error) => {
+      error: error => {
         console.error('Error loading dashboard data', error);
         this.loading = false;
       },

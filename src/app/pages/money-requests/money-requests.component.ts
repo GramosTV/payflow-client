@@ -97,7 +97,7 @@ export class MoneyRequestsComponent implements OnInit {
   loadIncomingRequests(): void {
     this.loadingIncoming = true;
     this.moneyRequestService.getIncomingRequests().subscribe({
-      next: (response) => {
+      next: response => {
         if (response && Array.isArray((response as any).content)) {
           this.incomingRequests = (response as any).content;
           this.filterRequests(this.filterStatus);
@@ -113,7 +113,7 @@ export class MoneyRequestsComponent implements OnInit {
         }
         this.loadingIncoming = false;
       },
-      error: (error) => {
+      error: error => {
         console.error('Error loading incoming requests', error);
         this.incomingRequests = [];
         this.loadingIncoming = false;
@@ -124,7 +124,7 @@ export class MoneyRequestsComponent implements OnInit {
   loadOutgoingRequests(): void {
     this.loadingOutgoing = true;
     this.moneyRequestService.getOutgoingRequests().subscribe({
-      next: (response) => {
+      next: response => {
         if (response && Array.isArray((response as any).content)) {
           this.outgoingRequests = (response as any).content;
         } else if (Array.isArray(response)) {
@@ -138,7 +138,7 @@ export class MoneyRequestsComponent implements OnInit {
         }
         this.loadingOutgoing = false;
       },
-      error: (error) => {
+      error: error => {
         console.error('Error loading outgoing requests', error);
         this.outgoingRequests = [];
         this.loadingOutgoing = false;
@@ -148,20 +148,20 @@ export class MoneyRequestsComponent implements OnInit {
 
   loadWalletData(): void {
     this.walletService.getWallet().subscribe({
-      next: (wallet) => {
+      next: wallet => {
         this.wallet = wallet;
         this.walletBalance = wallet.balance;
       },
-      error: (error) => {
+      error: error => {
         console.error('Error loading wallet data', error);
       },
     });
 
     this.walletService.getPaymentMethods().subscribe({
-      next: (methods) => {
+      next: methods => {
         this.paymentMethods = methods;
       },
-      error: (error) => {
+      error: error => {
         console.error('Error loading payment methods', error);
       },
     });
@@ -200,7 +200,7 @@ export class MoneyRequestsComponent implements OnInit {
     if (status === 'All') {
       this.filteredIncomingRequests = [...this.incomingRequests];
     } else {
-      const statusMap: { [key: string]: RequestStatus } = {
+      const statusMap: Record<string, RequestStatus> = {
         Pending: RequestStatus.PENDING,
         Completed: RequestStatus.COMPLETED,
         Rejected: RequestStatus.REJECTED,
@@ -209,16 +209,14 @@ export class MoneyRequestsComponent implements OnInit {
 
       const statusEnum = statusMap[status];
       if (statusEnum) {
-        this.filteredIncomingRequests = this.incomingRequests.filter(
-          (r) => r.status === statusEnum
-        );
+        this.filteredIncomingRequests = this.incomingRequests.filter(r => r.status === statusEnum);
       }
     }
   }
   createMoneyRequest(): void {
     if (this.requestForm.invalid) {
       // Mark all fields as touched to display validation errors
-      Object.values(this.requestForm.controls).forEach((control) => {
+      Object.values(this.requestForm.controls).forEach(control => {
         control.markAsTouched();
       });
       this.snackBar.open('Please correct the errors in the form.', 'Close', {
@@ -238,7 +236,7 @@ export class MoneyRequestsComponent implements OnInit {
     };
 
     this.moneyRequestService.createMoneyRequest(requestData).subscribe({
-      next: (response) => {
+      next: () => {
         this.isProcessing = false;
         this.snackBar.open('Money request created successfully!', 'Close', {
           duration: 3000,
@@ -247,7 +245,7 @@ export class MoneyRequestsComponent implements OnInit {
         // Optionally, reload outgoing requests
         this.loadOutgoingRequests();
       },
-      error: (error) => {
+      error: error => {
         this.isProcessing = false;
         console.error('Error creating money request', error);
         let errorMessage = 'Failed to create money request.';
@@ -296,7 +294,7 @@ export class MoneyRequestsComponent implements OnInit {
           );
           this.selectedRequest = null;
         },
-        error: (error) => {
+        error: error => {
           this.paymentProcessing = false;
           console.error('Error paying money request', error);
           this.showErrorMessage(error.message || 'Payment failed');
@@ -312,7 +310,7 @@ export class MoneyRequestsComponent implements OnInit {
           this.loadIncomingRequests();
           this.showSuccessMessage('Money request rejected');
         },
-        error: (error) => {
+        error: error => {
           console.error('Error rejecting money request', error);
           this.showErrorMessage('Failed to reject money request');
         },
@@ -328,7 +326,7 @@ export class MoneyRequestsComponent implements OnInit {
           this.loadOutgoingRequests();
           this.showSuccessMessage('Money request cancelled');
         },
-        error: (error) => {
+        error: error => {
           console.error('Error cancelling money request', error);
           this.showErrorMessage('Failed to cancel money request');
         },

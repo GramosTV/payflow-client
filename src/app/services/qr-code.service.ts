@@ -32,11 +32,8 @@ export class QRCodeService implements OnDestroy {
   getUserQRCodes(): Observable<QRCode[]> {
     return this.apiService.get<QRCode[]>('qr-codes').pipe(
       takeUntil(this.destroy$),
-      catchError((error) => {
-        this.errorHandlingService.handleApiError(
-          error,
-          'Failed to retrieve QR codes'
-        );
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to retrieve QR codes');
         return throwError(() => error);
       })
     );
@@ -50,7 +47,7 @@ export class QRCodeService implements OnDestroy {
   getQRCodeById(id: number): Observable<QRCode> {
     return this.apiService.get<QRCode>(`qr-codes/${id}`).pipe(
       takeUntil(this.destroy$),
-      catchError((error) => {
+      catchError(error => {
         this.errorHandlingService.handleApiError(
           error,
           `Failed to retrieve QR code with ID: ${id}`
@@ -67,18 +64,16 @@ export class QRCodeService implements OnDestroy {
    */
   getQRCodeImageById(id: number): Observable<string> {
     return this.apiService
-      .get<{ imageData: string; qrId: string; id: string }>(
-        `qr-codes/${id}/image`
-      )
+      .get<{ imageData: string; qrId: string; id: string }>(`qr-codes/${id}/image`)
       .pipe(
         takeUntil(this.destroy$),
-        map((response) => {
+        map(response => {
           if (!response.imageData) {
             throw new Error('Image data is missing in the response');
           }
           return response.imageData;
         }),
-        catchError((error) => {
+        catchError(error => {
           this.errorHandlingService.handleApiError(
             error,
             `Failed to retrieve QR code image with ID: ${id}`
@@ -103,11 +98,8 @@ export class QRCodeService implements OnDestroy {
   }): Observable<QRCode> {
     return this.apiService.post<QRCode>('qr-codes', qrCodeData).pipe(
       takeUntil(this.destroy$),
-      catchError((error) => {
-        this.errorHandlingService.handleApiError(
-          error,
-          'Failed to create QR code'
-        );
+      catchError(error => {
+        this.errorHandlingService.handleApiError(error, 'Failed to create QR code');
         return throwError(() => error);
       })
     );
@@ -138,9 +130,7 @@ export class QRCodeService implements OnDestroy {
     // Handle expiration minutes by converting to expiresAt date
     if (qrCodeData.expirationMinutes && !qrCodeData.expiresAt) {
       const expiresAt = new Date();
-      expiresAt.setMinutes(
-        expiresAt.getMinutes() + qrCodeData.expirationMinutes
-      );
+      expiresAt.setMinutes(expiresAt.getMinutes() + qrCodeData.expirationMinutes);
       finalData.expiresAt = expiresAt;
     }
 
@@ -166,11 +156,8 @@ export class QRCodeService implements OnDestroy {
       })
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.errorHandlingService.handleApiError(
-            error,
-            'Failed to process QR code payment'
-          );
+        catchError(error => {
+          this.errorHandlingService.handleApiError(error, 'Failed to process QR code payment');
           return throwError(() => error);
         })
       );
@@ -184,7 +171,7 @@ export class QRCodeService implements OnDestroy {
   deactivateQRCode(id: number): Observable<QRCode> {
     return this.apiService.post<QRCode>(`qr-codes/${id}/deactivate`, {}).pipe(
       takeUntil(this.destroy$),
-      catchError((error) => {
+      catchError(error => {
         this.errorHandlingService.handleApiError(
           error,
           `Failed to deactivate QR code with ID: ${id}`

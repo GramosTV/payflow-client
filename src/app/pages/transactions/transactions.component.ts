@@ -1,10 +1,4 @@
-import {
-  Component,
-  OnInit,
-  ViewChild,
-  TemplateRef,
-  AfterViewInit,
-} from '@angular/core';
+import { Component, OnInit, ViewChild, TemplateRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -50,14 +44,7 @@ export class TransactionsComponent implements OnInit, AfterViewInit {
   @ViewChild('transactionDetailsTmpl')
   transactionDetailsTmpl!: TemplateRef<any>;
 
-  displayedColumns: string[] = [
-    'type',
-    'description',
-    'timestamp',
-    'amount',
-    'status',
-    'details',
-  ];
+  displayedColumns: string[] = ['type', 'description', 'timestamp', 'amount', 'status', 'details'];
   dataSource = new MatTableDataSource<Transaction>([]); // Initialized with empty array
 
   transactions: Transaction[] = [];
@@ -88,9 +75,7 @@ export class TransactionsComponent implements OnInit, AfterViewInit {
           return item.timestamp ? new Date(item.timestamp).getTime() : 0;
         default:
           // Ensure item is not null and property exists before accessing
-          return item && (item as any)[property] !== undefined
-            ? (item as any)[property]
-            : null;
+          return item && (item as any)[property] !== undefined ? (item as any)[property] : null;
       }
     };
   }
@@ -98,12 +83,12 @@ export class TransactionsComponent implements OnInit, AfterViewInit {
   loadTransactions(): void {
     this.loading = true;
     this.transactionService.getAllTransactions().subscribe({
-      next: (data) => {
+      next: data => {
         this.transactions = Array.isArray(data) ? data : []; // Ensure data is an array
         this.applyFilter(); // This will update filteredTransactions and dataSource
         this.loading = false;
       },
-      error: (error) => {
+      error: error => {
         console.error('Error loading transactions', error);
         this.transactions = []; // Initialize to empty array on error
         this.applyFilter(); // Update dataSource to empty array via applyFilter
@@ -123,27 +108,25 @@ export class TransactionsComponent implements OnInit, AfterViewInit {
         const daysBack = parseInt(this.dateRange);
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - daysBack);
-        filtered = filtered.filter((transaction) =>
-          transaction.timestamp
-            ? new Date(transaction.timestamp) >= cutoffDate
-            : false
+        filtered = filtered.filter(transaction =>
+          transaction.timestamp ? new Date(transaction.timestamp) >= cutoffDate : false
         );
       }
 
       if (this.searchTerm) {
         const lowerSearchTerm = this.searchTerm.toLowerCase();
         filtered = filtered.filter(
-          (t) =>
+          t =>
             t.description?.toLowerCase().includes(lowerSearchTerm) ||
             t.type?.toLowerCase().includes(lowerSearchTerm) ||
             t.status?.toLowerCase().includes(lowerSearchTerm)
         );
       }
       if (this.filterType) {
-        filtered = filtered.filter((t) => t.type === this.filterType);
+        filtered = filtered.filter(t => t.type === this.filterType);
       }
       if (this.filterStatus) {
-        filtered = filtered.filter((t) => t.status === this.filterStatus);
+        filtered = filtered.filter(t => t.status === this.filterStatus);
       }
 
       this.filteredTransactions = filtered;
@@ -162,22 +145,20 @@ export class TransactionsComponent implements OnInit, AfterViewInit {
   }
 
   downloadTransactionReceipt(transactionId: string): void {
-    this.transactionService
-      .downloadTransactionReceipt(Number(transactionId))
-      .subscribe({
-        next: (data) => {
-          const blob = new Blob([data], { type: 'application/pdf' });
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `transaction-${transactionId}.pdf`;
-          link.click();
-          window.URL.revokeObjectURL(url);
-        },
-        error: (error) => {
-          console.error('Error downloading receipt', error);
-        },
-      });
+    this.transactionService.downloadTransactionReceipt(Number(transactionId)).subscribe({
+      next: data => {
+        const blob = new Blob([data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `transaction-${transactionId}.pdf`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: error => {
+        console.error('Error downloading receipt', error);
+      },
+    });
   }
 
   onSearchTermChange(): void {

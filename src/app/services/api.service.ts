@@ -22,14 +22,14 @@ export class ApiService {
    */
   get<T>(
     endpoint: string,
-    params?: any,
+    params?: Record<string, unknown>,
     timeoutMs = this.defaultTimeout
   ): Observable<T> {
     const options = { params: this.buildParams(params) };
 
     return this.http.get<T>(`${this.apiUrl}/${endpoint}`, options).pipe(
       timeout(timeoutMs),
-      catchError((error) => {
+      catchError(error => {
         this.errorHandler.handleApiError(error, `GET ${endpoint}`);
         return throwError(() => error);
       })
@@ -39,17 +39,14 @@ export class ApiService {
   /**
    * GET method for binary responses like PDF receipts
    */
-  getBinary(
-    endpoint: string,
-    timeoutMs = this.defaultTimeout
-  ): Observable<Blob> {
+  getBinary(endpoint: string, timeoutMs = this.defaultTimeout): Observable<Blob> {
     return this.http
       .get(`${this.apiUrl}/${endpoint}`, {
         responseType: 'blob',
       })
       .pipe(
         timeout(timeoutMs),
-        catchError((error) => {
+        catchError(error => {
           this.errorHandler.handleApiError(error, `GET binary ${endpoint}`);
           return throwError(() => error);
         })
@@ -59,14 +56,10 @@ export class ApiService {
   /**
    * Generic POST method
    */
-  post<T>(
-    endpoint: string,
-    body: any,
-    timeoutMs = this.defaultTimeout
-  ): Observable<T> {
+  post<T>(endpoint: string, body: unknown, timeoutMs = this.defaultTimeout): Observable<T> {
     return this.http.post<T>(`${this.apiUrl}/${endpoint}`, body).pipe(
       timeout(timeoutMs),
-      catchError((error) => {
+      catchError(error => {
         this.errorHandler.handleApiError(error, `POST ${endpoint}`);
         return throwError(() => error);
       })
@@ -76,14 +69,10 @@ export class ApiService {
   /**
    * Generic PUT method
    */
-  put<T>(
-    endpoint: string,
-    body: any,
-    timeoutMs = this.defaultTimeout
-  ): Observable<T> {
+  put<T>(endpoint: string, body: unknown, timeoutMs = this.defaultTimeout): Observable<T> {
     return this.http.put<T>(`${this.apiUrl}/${endpoint}`, body).pipe(
       timeout(timeoutMs),
-      catchError((error) => {
+      catchError(error => {
         this.errorHandler.handleApiError(error, `PUT ${endpoint}`);
         return throwError(() => error);
       })
@@ -96,7 +85,7 @@ export class ApiService {
   delete<T>(endpoint: string, timeoutMs = this.defaultTimeout): Observable<T> {
     return this.http.delete<T>(`${this.apiUrl}/${endpoint}`).pipe(
       timeout(timeoutMs),
-      catchError((error) => {
+      catchError(error => {
         this.errorHandler.handleApiError(error, `DELETE ${endpoint}`);
         return throwError(() => error);
       })
@@ -116,20 +105,20 @@ export class ApiService {
 
     return this.http.get<Blob>(`${this.apiUrl}/${endpoint}`, options).pipe(
       timeout(timeoutMs),
-      catchError((error) => {
+      catchError(error => {
         this.errorHandler.handleApiError(error, `GET blob ${endpoint}`);
         return throwError(() => error);
       })
     );
   }
 
-  private buildParams(params?: any): HttpParams {
+  private buildParams(params?: Record<string, unknown>): HttpParams {
     let httpParams = new HttpParams();
 
     if (params) {
-      Object.keys(params).forEach((key) => {
+      Object.keys(params).forEach(key => {
         if (params[key] !== null && params[key] !== undefined) {
-          httpParams = httpParams.set(key, params[key]);
+          httpParams = httpParams.set(key, String(params[key]));
         }
       });
     }

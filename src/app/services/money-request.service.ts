@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { MoneyRequest, RequestStatus } from '../models/money-request.model';
+import { MoneyRequest } from '../models/money-request.model';
 import { Transaction } from '../models/transaction.model';
 
 @Injectable({
@@ -67,46 +67,32 @@ export class MoneyRequestService {
   /**
    * Accept a money request
    */
-  acceptMoneyRequest(
-    requestId: number,
-    sourceWalletId: number
-  ): Observable<Transaction> {
-    return this.apiService.post<Transaction>(
-      `money-requests/${requestId}/accept`,
-      { sourceWalletId }
-    );
+  acceptMoneyRequest(requestId: number, sourceWalletId: number): Observable<Transaction> {
+    return this.apiService.post<Transaction>(`money-requests/${requestId}/accept`, {
+      sourceWalletId,
+    });
   }
 
   /**
    * Pay a money request using a payment method
    */
-  payMoneyRequest(
-    requestId: number,
-    paymentMethodId: number
-  ): Observable<Transaction> {
-    return this.apiService.post<Transaction>(
-      `money-requests/${requestId}/pay`,
-      { paymentMethodId }
-    );
+  payMoneyRequest(requestId: number, paymentMethodId: number): Observable<Transaction> {
+    return this.apiService.post<Transaction>(`money-requests/${requestId}/pay`, {
+      paymentMethodId,
+    });
   }
 
   /**
    * Reject a money request
    */
   rejectMoneyRequest(requestId: number): Observable<MoneyRequest> {
-    return this.apiService.post<MoneyRequest>(
-      `money-requests/${requestId}/reject`,
-      {}
-    );
+    return this.apiService.post<MoneyRequest>(`money-requests/${requestId}/reject`, {});
   }
 
   /**
    * Cancel a money request (for the sender)
    */
   cancelMoneyRequest(requestId: number): Observable<MoneyRequest> {
-    return this.apiService.post<MoneyRequest>(
-      `money-requests/${requestId}/cancel`,
-      {}
-    );
+    return this.apiService.post<MoneyRequest>(`money-requests/${requestId}/cancel`, {});
   }
 }

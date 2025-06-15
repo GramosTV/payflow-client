@@ -10,9 +10,7 @@
           <mat-label>Amount</mat-label>
           <span matPrefix class="flex items-center ml-4">$&nbsp;</span>
           <input matInput type="number" formControlName="amount" />
-          <mat-hint
-            >Optional: Leave blank for recipient to enter amount</mat-hint
-          >
+          <mat-hint>Optional: Leave blank for recipient to enter amount</mat-hint>
           <mat-error *ngIf="qrCodeForm.get('amount')?.hasError('min')">
             Amount must be greater than 0
           </mat-error>
@@ -58,10 +56,7 @@
       >
         <div class="p-4 border-2 border-indigo-200 rounded-lg">
           <!-- Loading spinner -->
-          <div
-            *ngIf="isLoadingQrImage"
-            class="w-64 h-64 flex items-center justify-center"
-          >
+          <div *ngIf="isLoadingQrImage" class="w-64 h-64 flex items-center justify-center">
             <mat-spinner [diameter]="40"></mat-spinner>
           </div>
 
@@ -73,12 +68,7 @@
             <div class="text-center">
               <mat-icon color="warn" class="text-4xl">error_outline</mat-icon>
               <p class="text-sm text-red-500 mt-2">{{ qrCodeImageError }}</p>
-              <button
-                mat-stroked-button
-                color="primary"
-                class="mt-2"
-                (click)="generateQRCode()"
-              >
+              <button mat-stroked-button color="primary" class="mt-2" (click)="generateQRCode()">
                 <mat-icon class="mr-1">refresh</mat-icon>
                 Retry
               </button>
@@ -86,12 +76,7 @@
           </div>
 
           <!-- QR Code image -->
-          <img
-            *ngIf="qrCodeData"
-            [src]="qrCodeData"
-            alt="Payment QR Code"
-            class="w-64 h-64"
-          />
+          <img *ngIf="qrCodeData" [src]="qrCodeData" alt="Payment QR Code" class="w-64 h-64" />
         </div>
 
         <div class="mt-4 text-center">
@@ -102,7 +87,7 @@
             {{ generatedDescription }}
           </p>
           <p *ngIf="expirationTime" class="text-xs text-gray-500 mt-2">
-            Expires: {{ expirationTime | date : "medium" }}
+            Expires: {{ expirationTime | date: 'medium' }}
           </p>
         </div>
 
@@ -129,56 +114,32 @@
       <!-- Camera Preview -->
       <div *ngIf="!scanResult" class="flex flex-col items-center">
         <div class="mb-4">
-          <p class="text-center text-gray-600">
-            Use your camera to scan a PayFlow QR code
-          </p>
+          <p class="text-center text-gray-600">Use your camera to scan a PayFlow QR code</p>
         </div>
 
-        <div
-          class="relative w-64 h-64 border-2 border-purple-200 rounded-lg overflow-hidden"
-        >
-          <video
-            #videoElement
-            class="absolute top-0 left-0 w-full h-full object-cover"
-          ></video>
+        <div class="relative w-64 h-64 border-2 border-purple-200 rounded-lg overflow-hidden">
+          <video #videoElement class="absolute top-0 left-0 w-full h-full object-cover"></video>
           <canvas
             #canvasElement
             class="absolute top-0 left-0 w-full h-full object-cover"
             style="display: none"
           ></canvas>
-          <div
-            class="absolute top-0 left-0 w-full h-full flex items-center justify-center"
-          >
+          <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center">
             <!-- Show camera icon when not scanning -->
-            <mat-icon
-              *ngIf="!isScanning"
-              class="text-purple-300 w-32 h-32 opacity-75"
+            <mat-icon *ngIf="!isScanning" class="text-purple-300 w-32 h-32 opacity-75"
               >photo_camera</mat-icon
             >
             <!-- Show viewfinder when scanning -->
-            <div
-              *ngIf="isScanning"
-              class="w-40 h-40 border-2 border-white opacity-60"
-            ></div>
+            <div *ngIf="isScanning" class="w-40 h-40 border-2 border-white opacity-60"></div>
           </div>
         </div>
 
         <div class="mt-4 flex justify-center">
-          <button
-            mat-flat-button
-            color="primary"
-            (click)="startScanning()"
-            *ngIf="!isScanning"
-          >
+          <button mat-flat-button color="primary" (click)="startScanning()" *ngIf="!isScanning">
             <mat-icon class="mr-1">qr_code_scanner</mat-icon>
             Start Scanning
           </button>
-          <button
-            mat-stroked-button
-            color="warn"
-            (click)="stopScanning()"
-            *ngIf="isScanning"
-          >
+          <button mat-stroked-button color="warn" (click)="stopScanning()" *ngIf="isScanning">
             <mat-icon class="mr-1">stop</mat-icon>
             Stop Scanning
           </button>
@@ -188,9 +149,7 @@
       <!-- Scan Result -->
       <div *ngIf="scanResult" class="flex flex-col items-center">
         <div class="w-full max-w-md p-4 border border-gray-200 rounded-lg">
-          <h3 class="text-lg font-medium text-gray-800 mb-4">
-            Payment Details
-          </h3>
+          <h3 class="text-lg font-medium text-gray-800 mb-4">Payment Details</h3>
 
           <div class="space-y-4">
             <div>
@@ -201,38 +160,17 @@
             <div>
               <p class="text-sm text-gray-500">Amount</p>
               <div class="flex items-center">
-                <span
-                  *ngIf="!scanResult.amount"
-                  class="text-sm text-gray-500 italic"
+                <span *ngIf="!scanResult.amount" class="text-sm text-gray-500 italic"
                   >Not specified</span
                 >
-                <mat-form-field
-                  *ngIf="scanResult.amount"
-                  appearance="outline"
-                  class="w-full"
-                >
+                <mat-form-field *ngIf="scanResult.amount" appearance="outline" class="w-full">
                   <span matPrefix>$&nbsp;</span>
-                  <input
-                    matInput
-                    type="number"
-                    [value]="scanResult.amount"
-                    readonly
-                  />
+                  <input matInput type="number" [value]="scanResult.amount" readonly />
                 </mat-form-field>
-                <mat-form-field
-                  *ngIf="!scanResult.amount"
-                  appearance="outline"
-                  class="w-full"
-                >
+                <mat-form-field *ngIf="!scanResult.amount" appearance="outline" class="w-full">
                   <mat-label>Enter Amount</mat-label>
                   <span matPrefix>$&nbsp;</span>
-                  <input
-                    matInput
-                    type="number"
-                    [(ngModel)]="customAmount"
-                    min="0.01"
-                    required
-                  />
+                  <input matInput type="number" [(ngModel)]="customAmount" min="0.01" required />
                 </mat-form-field>
               </div>
             </div>
@@ -240,14 +178,14 @@
             <div>
               <p class="text-sm text-gray-500">Description</p>
               <p class="font-medium">
-                {{ scanResult.description || "No description provided" }}
+                {{ scanResult.description || 'No description provided' }}
               </p>
             </div>
 
             <div *ngIf="scanResult.expirationTime">
               <p class="text-sm text-gray-500">Expires</p>
               <p class="font-medium">
-                {{ scanResult.expirationTime | date : "medium" }}
+                {{ scanResult.expirationTime | date: 'medium' }}
               </p>
             </div>
 
@@ -257,14 +195,11 @@
                 <mat-option value="WALLET"
                   >Wallet Balance ({{ walletBalance | currency }})</mat-option
                 >
-                <mat-option
-                  *ngFor="let method of paymentMethods"
-                  [value]="method.id"
-                >
+                <mat-option *ngFor="let method of paymentMethods" [value]="method.id">
                   {{ method.name }} ({{
-                    method.type === "CARD"
-                      ? "•••• " + method.lastFourDigits
-                      : "ending in " + method.lastFourDigits
+                    method.type === 'CARD'
+                      ? '•••• ' + method.lastFourDigits
+                      : 'ending in ' + method.lastFourDigits
                   }})
                 </mat-option>
               </mat-select>
@@ -277,9 +212,7 @@
               mat-flat-button
               color="primary"
               (click)="makePayment()"
-              [disabled]="
-                (!scanResult.amount && !customAmount) || processingPayment
-              "
+              [disabled]="(!scanResult.amount && !customAmount) || processingPayment"
             >
               <mat-spinner
                 *ngIf="processingPayment"

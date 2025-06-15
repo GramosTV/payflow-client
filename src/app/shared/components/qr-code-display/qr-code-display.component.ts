@@ -4,8 +4,6 @@ import { Component } from '@angular/core';
   selector: 'app-qr-code-display',
   imports: [],
   templateUrl: './qr-code-display.component.html',
-  styleUrl: './qr-code-display.component.scss'
+  styleUrl: './qr-code-display.component.scss',
 })
-export class QrCodeDisplayComponent {
-
-}
+export class QrCodeDisplayComponent {}

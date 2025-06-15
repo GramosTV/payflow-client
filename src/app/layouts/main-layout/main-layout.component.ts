@@ -11,36 +11,31 @@ import { User } from '../../models/user.model';
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    MatIconModule,
-    MatButtonModule,
-    MatSidenavModule,
-  ],
+  imports: [CommonModule, RouterModule, MatIconModule, MatButtonModule, MatSidenavModule],
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.scss',
 })
 export class MainLayoutComponent implements OnInit {
   @ViewChild('drawer') drawer!: MatDrawer;
 
-  pageTitle: string = 'Dashboard';
+  pageTitle = 'Dashboard';
   user: User | null = null;
-  userInitials: string = '';
-  notifications: number = 0;
+  userInitials = '';
+  notifications = 0;
 
-  constructor(private router: Router, private authService: AuthService) {}
+  constructor(
+    private router: Router,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.loadUserData();
 
     // Update page title based on route
-    this.router.events
-      .pipe(filter((event) => event instanceof NavigationEnd))
-      .subscribe(() => {
-        const url = this.router.url;
-        this.setPageTitle(url);
-      });
+    this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
+      const url = this.router.url;
+      this.setPageTitle(url);
+    });
 
     // Mock notifications
     this.notifications = Math.floor(Math.random() * 5);
@@ -51,7 +46,7 @@ export class MainLayoutComponent implements OnInit {
     if (this.user && this.user.fullName) {
       const nameParts = this.user.fullName.split(' ');
       this.userInitials = nameParts
-        .map((part) => part[0])
+        .map(part => part[0])
         .join('')
         .toUpperCase();
     } else {

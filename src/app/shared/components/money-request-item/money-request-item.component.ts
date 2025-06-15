@@ -4,8 +4,6 @@ import { Component } from '@angular/core';
   selector: 'app-money-request-item',
   imports: [],
   templateUrl: './money-request-item.component.html',
-  styleUrl: './money-request-item.component.scss'
+  styleUrl: './money-request-item.component.scss',
 })
-export class MoneyRequestItemComponent {
-
-}
+export class MoneyRequestItemComponent {}
