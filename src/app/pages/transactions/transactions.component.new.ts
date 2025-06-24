@@ -24,7 +24,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { TransactionService } from '../../services/transaction.service';
-import { Transaction, TransactionType, TransactionStatus } from '../../models/transaction.model';
+import { Transaction } from '../../models/transaction.model';
 
 @Component({
   selector: 'app-transactions',
@@ -53,11 +53,9 @@ export class TransactionsComponent implements OnInit, AfterViewInit {
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('transactionDetailsTmpl')
   transactionDetailsTmpl!: TemplateRef<Transaction>;
+
   private transactionService = inject(TransactionService);
   private dialog = inject(MatDialog);
-  // Expose enums for template use
-  readonly TransactionType = TransactionType;
-  readonly TransactionStatus = TransactionStatus;
 
   displayedColumns: string[] = ['type', 'description', 'timestamp', 'amount', 'status', 'details'];
   dataSource = new MatTableDataSource<Transaction>([]);
@@ -202,36 +200,34 @@ export class TransactionsComponent implements OnInit, AfterViewInit {
   refreshTransactions(): void {
     this.loadTransactions();
   }
+
   getStatusClass(status: string): string {
-    switch (status) {
-      case TransactionStatus.COMPLETED:
+    switch (status?.toLowerCase()) {
+      case 'completed':
+      case 'success':
         return 'text-green-600 bg-green-100';
-      case TransactionStatus.PENDING:
+      case 'pending':
         return 'text-yellow-600 bg-yellow-100';
-      case TransactionStatus.FAILED:
+      case 'failed':
+      case 'error':
         return 'text-red-600 bg-red-100';
-      case TransactionStatus.CANCELLED:
-        return 'text-gray-600 bg-gray-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }
   }
+
   getTypeIcon(type: string): string {
-    switch (type) {
-      case TransactionType.PAYMENT:
+    switch (type?.toLowerCase()) {
+      case 'payment':
         return 'payment';
-      case TransactionType.TRANSFER:
+      case 'transfer':
         return 'swap_horiz';
-      case TransactionType.DEPOSIT:
+      case 'deposit':
         return 'add_circle';
-      case TransactionType.WITHDRAWAL:
+      case 'withdrawal':
         return 'remove_circle';
-      case TransactionType.REQUEST_PAYMENT:
-        return 'request_quote';
-      case TransactionType.RECEIVED:
-        return 'arrow_downward';
-      case TransactionType.SENT:
-        return 'arrow_upward';
+      case 'refund':
+        return 'undo';
       default:
         return 'account_balance_wallet';
     }

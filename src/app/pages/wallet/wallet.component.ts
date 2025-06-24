@@ -3,9 +3,10 @@ import {
   OnInit,
   TemplateRef,
   ViewChild,
-  OnDestroy,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
+  inject,
+  signal,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -19,20 +20,18 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
-import { WalletService } from '../../services/wallet.service';
-import { TransactionService } from '../../services/transaction.service';
+import { WalletStore } from '../../stores/wallet.store';
+import { TransactionStore } from '../../stores/transaction.store';
 import { ErrorHandlingService } from '../../services/error-handling.service';
 import { Wallet } from '../../models/wallet.model';
-import { Transaction } from '../../models/transaction.model';
-import { forkJoin, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-
-interface PaymentMethod {
-  id: string;
-  name: string;
-  type: 'CARD' | 'BANK_ACCOUNT';
-  lastFourDigits: string;
-}
+import { Transaction, TransactionType } from '../../models/transaction.model';
+import {
+  PaymentMethod,
+  PaymentMethodType,
+  AddMoneyRequest,
+  WithdrawRequest,
+  CreatePaymentMethodRequest,
+} from '../../models/payment.model';
 
 interface MonthlyStats {
   spent: number;
@@ -60,33 +59,56 @@ interface MonthlyStats {
   styleUrl: './wallet.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WalletComponent implements OnInit, OnDestroy {
-  private destroy$ = new Subject<void>();
+export class WalletComponent implements OnInit {
+  private walletStore = inject(WalletStore);
+  private transactionStore = inject(TransactionStore);
+  private errorHandler = inject(ErrorHandlingService);
+  private formBuilder = inject(FormBuilder);
+  private dialog = inject(MatDialog);
+  private snackBar = inject(MatSnackBar);
 
-  @ViewChild('addMoneyDialogTmpl') addMoneyDialogTmpl!: TemplateRef<any>;
-  @ViewChild('withdrawDialogTmpl') withdrawDialogTmpl!: TemplateRef<any>;
+  @ViewChild('addMoneyDialogTmpl') addMoneyDialogTmpl!: TemplateRef<AddMoneyRequest>;
+  @ViewChild('withdrawDialogTmpl') withdrawDialogTmpl!: TemplateRef<WithdrawRequest>;
   @ViewChild('addPaymentMethodDialogTmpl')
-  addPaymentMethodDialogTmpl!: TemplateRef<any>;
+  addPaymentMethodDialogTmpl!: TemplateRef<CreatePaymentMethodRequest>;
 
-  loading = true;
-  isProcessing = false;
-  wallet: Wallet | null = null;
-  transactions: Transaction[] = [];
-  paymentMethods: PaymentMethod[] = [];
-  monthlyStats: MonthlyStats = { spent: 0, received: 0, count: 0 };
+  // Get signals from stores
+  wallet = this.walletStore.wallet;
+  paymentMethods = this.walletStore.paymentMethods;
+  loading = this.walletStore.isLoading;
+  isProcessing = this.walletStore.isProcessing;
 
-  addMoneyForm: FormGroup;
-  withdrawForm: FormGroup;
-  paymentMethodForm: FormGroup;
-  constructor(
-    private walletService: WalletService,
-    private transactionService: TransactionService,
-    private errorHandler: ErrorHandlingService,
-    private formBuilder: FormBuilder,
-    private dialog: MatDialog,
-    private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef
-  ) {
+  transactions = this.transactionStore.recentTransactions;
+
+  // Computed monthly stats from transactions
+  monthlyStats = computed(() => {
+    const trans = this.transactions();
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+
+    const monthlyTrans = trans.filter(t => {
+      if (!t.createdAt) return false;
+      const transDate = new Date(t.createdAt);
+      return transDate.getMonth() === currentMonth && transDate.getFullYear() === currentYear;
+    });
+
+    return {
+      spent: monthlyTrans
+        .filter(t => t.type === TransactionType.WITHDRAWAL || t.type === TransactionType.PAYMENT)
+        .reduce((sum, t) => sum + t.amount, 0),
+      received: monthlyTrans
+        .filter(t => t.type === TransactionType.DEPOSIT || t.type === TransactionType.RECEIVED)
+        .reduce((sum, t) => sum + t.amount, 0),
+      count: monthlyTrans.length,
+    };
+  });
+
+  addMoneyForm!: FormGroup;
+  withdrawForm!: FormGroup;
+  paymentMethodForm!: FormGroup;
+
+  ngOnInit(): void {
+    // Initialize forms
     this.addMoneyForm = this.formBuilder.group({
       amount: ['', [Validators.required, Validators.min(0.01)]],
       paymentMethodId: ['', Validators.required],
@@ -99,275 +121,87 @@ export class WalletComponent implements OnInit, OnDestroy {
 
     this.paymentMethodForm = this.formBuilder.group({
       type: ['CARD', Validators.required],
-      name: ['', Validators.required],
-      cardNumber: ['', [Validators.pattern(/^[0-9]{13,19}$/)]],
-      expiryDate: ['', [Validators.pattern(/^(0[1-9]|1[0-2])\/[0-9]{2}$/)]],
-      cvv: ['', [Validators.pattern(/^[0-9]{3,4}$/)]],
-      accountNumber: [''],
-      routingNumber: [''],
+      cardNumber: ['', [Validators.required, Validators.pattern(/^\d{16}$/)]],
+      expiryMonth: ['', [Validators.required, Validators.min(1), Validators.max(12)]],
+      expiryYear: ['', [Validators.required, Validators.min(new Date().getFullYear())]],
+      cvv: ['', [Validators.required, Validators.pattern(/^\d{3,4}$/)]],
+      holderName: ['', Validators.required],
     });
+
+    // Load data from stores
+    this.loadData();
   }
-
-  ngOnInit(): void {
-    this.loadWalletData();
-
-    // Add validators conditionally based on payment method type
-    this.paymentMethodForm.get('type')?.valueChanges.subscribe(type => {
-      const cardNumberControl = this.paymentMethodForm.get('cardNumber');
-      const expiryDateControl = this.paymentMethodForm.get('expiryDate');
-      const cvvControl = this.paymentMethodForm.get('cvv');
-      const accountNumberControl = this.paymentMethodForm.get('accountNumber');
-      const routingNumberControl = this.paymentMethodForm.get('routingNumber');
-
-      if (type === 'CARD') {
-        cardNumberControl?.setValidators([
-          Validators.required,
-          Validators.pattern(/^[0-9]{13,19}$/),
-        ]);
-        expiryDateControl?.setValidators([
-          Validators.required,
-          Validators.pattern(/^(0[1-9]|1[0-2])\/[0-9]{2}$/),
-        ]);
-        cvvControl?.setValidators([Validators.required, Validators.pattern(/^[0-9]{3,4}$/)]);
-        accountNumberControl?.clearValidators();
-        routingNumberControl?.clearValidators();
-      } else {
-        cardNumberControl?.clearValidators();
-        expiryDateControl?.clearValidators();
-        cvvControl?.clearValidators();
-        accountNumberControl?.setValidators([Validators.required]);
-        routingNumberControl?.setValidators([Validators.required]);
-      }
-
-      cardNumberControl?.updateValueAndValidity();
-      expiryDateControl?.updateValueAndValidity();
-      cvvControl?.updateValueAndValidity();
-      accountNumberControl?.updateValueAndValidity();
-      routingNumberControl?.updateValueAndValidity();
-    });
-  }
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  loadWalletData(): void {
-    this.loading = true;
-    forkJoin({
-      wallet: this.walletService.getWallet(),
-      transactions: this.transactionService.getTransactions(10),
-      methods: this.walletService.getPaymentMethods(),
-    })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: result => {
-          this.wallet = result.wallet;
-          this.transactions = result.transactions;
-          this.paymentMethods = result.methods;
-          this.calculateMonthlyStats(result.transactions);
-          this.loading = false;
-          this.cdr.markForCheck();
-
-          // Update max amount for withdraw form
-          if (this.wallet) {
-            this.withdrawForm
-              .get('amount')
-              ?.setValidators([
-                Validators.required,
-                Validators.min(0.01),
-                Validators.max(this.wallet.balance),
-              ]);
-            this.withdrawForm.get('amount')?.updateValueAndValidity();
-          }
-        },
-        error: error => {
-          this.loading = false;
-          this.errorHandler.handleApiError(error, 'loading wallet data');
-          this.cdr.markForCheck();
-        },
-      });
+  private loadData(): void {
+    this.walletStore.loadWallet();
+    this.walletStore.loadPaymentMethods();
+    this.transactionStore.loadRecentTransactions({ limit: 10 });
   }
 
   loadWallet(): void {
-    this.walletService
-      .getWallet()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: wallet => {
-          this.cdr.markForCheck();
-          this.wallet = wallet;
-          this.showSuccessMessage('Wallet balance updated');
-        },
-        error: error => {
-          console.error('Error refreshing wallet', error);
-          this.showErrorMessage('Failed to refresh wallet balance');
-        },
-      });
-  }
-
-  calculateMonthlyStats(transactions: Transaction[]): void {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthlyTransactions = transactions.filter(t =>
-      t.timestamp ? new Date(t.timestamp) >= startOfMonth : false
-    );
-
-    this.monthlyStats.count = monthlyTransactions.length;
-    this.monthlyStats.spent = monthlyTransactions
-      .filter(t => t.type === 'WITHDRAWAL' || t.type === 'SENT')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    this.monthlyStats.received = monthlyTransactions
-      .filter(t => t.type === 'DEPOSIT' || t.type === 'RECEIVED')
-      .reduce((sum, t) => sum + t.amount, 0);
+    this.loadData();
   }
 
   openAddMoneyDialog(): void {
-    if (this.paymentMethods.length === 0) {
-      this.openAddPaymentMethodDialog();
-      return;
-    }
-
-    this.addMoneyForm.reset({
-      amount: '',
-      paymentMethodId: this.paymentMethods[0].id,
+    this.dialog.open(this.addMoneyDialogTmpl, {
+      width: '400px',
     });
-
-    this.dialog.open(this.addMoneyDialogTmpl);
   }
 
   openWithdrawDialog(): void {
-    if (this.paymentMethods.length === 0) {
-      this.openAddPaymentMethodDialog();
-      return;
-    }
-
-    this.withdrawForm.reset({
-      amount: '',
-      paymentMethodId: this.paymentMethods[0].id,
+    this.dialog.open(this.withdrawDialogTmpl, {
+      width: '400px',
     });
-
-    this.dialog.open(this.withdrawDialogTmpl);
   }
 
   openAddPaymentMethodDialog(): void {
-    this.paymentMethodForm.reset({
-      type: 'CARD',
-      name: '',
-      cardNumber: '',
-      expiryDate: '',
-      cvv: '',
-      accountNumber: '',
-      routingNumber: '',
+    this.dialog.open(this.addPaymentMethodDialogTmpl, {
+      width: '400px',
     });
-
-    this.dialog.open(this.addPaymentMethodDialogTmpl);
   }
-  addMoney(): void {
-    if (this.addMoneyForm.invalid) {
-      return;
-    }
 
-    this.isProcessing = true;
-    const { amount, paymentMethodId } = this.addMoneyForm.value;
-
-    this.walletService
-      .addMoney(amount, paymentMethodId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: result => {
-          this.isProcessing = false;
-          this.dialog.closeAll();
-          this.wallet = result;
-          this.loadWalletData();
-          this.errorHandler.showSuccessMessage(`$${amount} added to your wallet`);
-          this.cdr.markForCheck();
-        },
-        error: error => {
-          this.isProcessing = false;
-          this.errorHandler.handleApiError(error, 'adding money');
-          this.showErrorMessage('Failed to add money to wallet');
-        },
+  onAddMoney(): void {
+    if (this.addMoneyForm.valid) {
+      const { amount, paymentMethodId } = this.addMoneyForm.value;
+      this.walletStore.addMoney({
+        amount: Number(amount),
+        paymentMethodId: Number(paymentMethodId),
       });
+      this.addMoneyForm.reset();
+      this.dialog.closeAll();
+    }
   }
 
-  withdraw(): void {
-    if (this.withdrawForm.invalid) {
-      return;
-    }
-
-    this.isProcessing = true;
-    const { amount, paymentMethodId } = this.withdrawForm.value;
-    this.walletService
-      .withdraw(amount, paymentMethodId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: result => {
-          this.isProcessing = false;
-          this.dialog.closeAll();
-          this.wallet = result;
-          this.loadWalletData();
-          this.errorHandler.showSuccessMessage(`$${amount} withdrawn from your wallet`);
-          this.cdr.markForCheck();
-        },
-        error: error => {
-          this.isProcessing = false;
-          this.errorHandler.handleApiError(error, 'withdrawing money');
-          this.cdr.markForCheck();
-        },
+  onWithdraw(): void {
+    if (this.withdrawForm.valid) {
+      const { amount, paymentMethodId } = this.withdrawForm.value;
+      this.walletStore.withdraw({
+        amount: Number(amount),
+        paymentMethodId: Number(paymentMethodId),
       });
-  }
-  addPaymentMethod(): void {
-    if (this.paymentMethodForm.invalid) {
-      return;
-    }
-
-    this.isProcessing = true;
-    const formValue = this.paymentMethodForm.value;
-
-    this.walletService
-      .addPaymentMethod(formValue)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: result => {
-          this.isProcessing = false;
-          this.dialog.closeAll();
-          this.paymentMethods.push(result);
-          this.showSuccessMessage('Payment method added successfully');
-          this.cdr.markForCheck();
-        },
-        error: error => {
-          this.isProcessing = false;
-          this.errorHandler.handleApiError(error, 'adding payment method');
-          this.cdr.markForCheck();
-        },
-      });
-  }
-  removePaymentMethod(id: string): void {
-    if (confirm('Are you sure you want to remove this payment method?')) {
-      this.walletService
-        .removePaymentMethod(Number(id))
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            this.paymentMethods = this.paymentMethods.filter(m => m.id !== id);
-            this.showSuccessMessage('Payment method removed');
-            this.cdr.markForCheck();
-          },
-          error: error => {
-            this.errorHandler.handleApiError(error, 'removing payment method');
-            this.cdr.markForCheck();
-          },
-        });
+      this.withdrawForm.reset();
+      this.dialog.closeAll();
     }
   }
-  showSuccessMessage(message: string): void {
-    this.errorHandler.showSuccessMessage(message);
-    this.cdr.markForCheck();
+  onAddPaymentMethod(): void {
+    if (this.paymentMethodForm.valid) {
+      const formValue = this.paymentMethodForm.value;
+      const paymentMethod: CreatePaymentMethodRequest = {
+        type: formValue.type,
+        provider: 'Default Provider',
+        accountNumber: formValue.cardNumber,
+        expiryDate: `${formValue.expiryMonth}/${formValue.expiryYear}`,
+      };
+      this.walletStore.addPaymentMethod(paymentMethod);
+      this.paymentMethodForm.reset();
+      this.dialog.closeAll();
+    }
   }
 
-  showErrorMessage(message: string): void {
-    this.errorHandler.showErrorMessage(message);
-    this.cdr.markForCheck();
+  onRemovePaymentMethod(id: number): void {
+    this.walletStore.removePaymentMethod(id);
+  }
+
+  onRefresh(): void {
+    this.loadData();
   }
 }

@@ -7,13 +7,13 @@
         <mat-icon class="text-white opacity-80">account_balance_wallet</mat-icon>
       </div>
 
-      <div *ngIf="loading" class="flex justify-center py-4">
+      <div *ngIf="loading()" class="flex justify-center py-4">
         <mat-spinner [diameter]="30"></mat-spinner>
       </div>
 
-      <div *ngIf="!loading && wallet" class="space-y-1">
+      <div *ngIf="!loading() && wallet()" class="space-y-1">
         <div class="text-3xl font-bold text-white">
-          {{ wallet.balance | currency }}
+          {{ wallet()?.balance | currency }}
         </div>
         <div class="text-sm text-indigo-100">Available Balance</div>
       </div>
@@ -61,12 +61,12 @@
     <div class="p-6">
       <h3 class="text-lg font-medium text-gray-800 mb-3">Exchange Rates</h3>
 
-      <div *ngIf="loading" class="flex justify-center py-4">
+      <div *ngIf="loading()" class="flex justify-center py-4">
         <mat-spinner [diameter]="30"></mat-spinner>
       </div>
-
-      <div *ngIf="!loading && exchangeRates.length > 0" class="space-y-3">
+      <div *ngIf="!loading() && exchangeRates.length > 0" class="space-y-3">
         <div *ngFor="let rate of exchangeRates" class="flex items-center justify-between">
+          >
           <div class="flex items-center">
             <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-2">
               <span class="text-sm font-medium">{{ rate.currencyCode }}</span>
@@ -101,34 +101,42 @@
         <p class="mt-2">No recent transactions</p>
       </div>
 
-      <div *ngIf="!loading && recentTransactions.length > 0">
+      <div *ngIf="!loading() && recentTransactions().length > 0">
         <div
-          *ngFor="let transaction of recentTransactions"
+          *ngFor="let transaction of recentTransactions()"
           class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0"
         >
           <div class="flex items-center">
             <div
               class="w-10 h-10 rounded-full"
               [ngClass]="{
-                'bg-green-100': transaction.type === 'DEPOSIT' || transaction.type === 'RECEIVED',
-                'bg-red-100': transaction.type === 'WITHDRAWAL' || transaction.type === 'SENT',
-                'bg-blue-100': transaction.type === 'TRANSFER',
+                'bg-green-100':
+                  transaction.type === TransactionType.DEPOSIT ||
+                  transaction.type === TransactionType.RECEIVED,
+                'bg-red-100':
+                  transaction.type === TransactionType.WITHDRAWAL ||
+                  transaction.type === TransactionType.SENT,
+                'bg-blue-100': transaction.type === TransactionType.TRANSFER,
               }"
             >
               <div class="w-full h-full flex items-center justify-center">
                 <mat-icon
                   [ngClass]="{
                     'text-green-600':
-                      transaction.type === 'DEPOSIT' || transaction.type === 'RECEIVED',
+                      transaction.type === TransactionType.DEPOSIT ||
+                      transaction.type === TransactionType.RECEIVED,
                     'text-red-600':
-                      transaction.type === 'WITHDRAWAL' || transaction.type === 'SENT',
-                    'text-blue-600': transaction.type === 'TRANSFER',
+                      transaction.type === TransactionType.WITHDRAWAL ||
+                      transaction.type === TransactionType.SENT,
+                    'text-blue-600': transaction.type === TransactionType.TRANSFER,
                   }"
                 >
                   {{
-                    transaction.type === 'DEPOSIT' || transaction.type === 'RECEIVED'
+                    transaction.type === TransactionType.DEPOSIT ||
+                    transaction.type === TransactionType.RECEIVED
                       ? 'arrow_downward'
-                      : transaction.type === 'WITHDRAWAL' || transaction.type === 'SENT'
+                      : transaction.type === TransactionType.WITHDRAWAL ||
+                          transaction.type === TransactionType.SENT
                         ? 'arrow_upward'
                         : 'swap_horiz'
                   }}
@@ -147,15 +155,21 @@
           <div>
             <p
               [ngClass]="{
-                'text-green-600': transaction.type === 'DEPOSIT' || transaction.type === 'RECEIVED',
-                'text-red-600': transaction.type === 'WITHDRAWAL' || transaction.type === 'SENT',
-                'text-gray-800': transaction.type === 'TRANSFER',
+                'text-green-600':
+                  transaction.type === TransactionType.DEPOSIT ||
+                  transaction.type === TransactionType.RECEIVED,
+                'text-red-600':
+                  transaction.type === TransactionType.WITHDRAWAL ||
+                  transaction.type === TransactionType.SENT,
+                'text-gray-800': transaction.type === TransactionType.TRANSFER,
               }"
             >
               {{
-                transaction.type === 'DEPOSIT' || transaction.type === 'RECEIVED'
+                transaction.type === TransactionType.DEPOSIT ||
+                transaction.type === TransactionType.RECEIVED
                   ? '+'
-                  : transaction.type === 'WITHDRAWAL' || transaction.type === 'SENT'
+                  : transaction.type === TransactionType.WITHDRAWAL ||
+                      transaction.type === TransactionType.SENT
                     ? '-'
                     : ''
               }}{{ transaction.amount | currency }}
@@ -185,9 +199,9 @@
         <p class="mt-2">No pending requests</p>
       </div>
 
-      <div *ngIf="!loading && pendingRequests.length > 0">
+      <div *ngIf="!loading() && pendingRequests().length > 0">
         <div
-          *ngFor="let request of pendingRequests"
+          *ngFor="let request of pendingRequests()"
           class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0"
         >
           <div class="flex items-center">

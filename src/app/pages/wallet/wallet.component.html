@@ -13,9 +13,9 @@
         <mat-spinner [diameter]="40"></mat-spinner>
       </div>
 
-      <div *ngIf="!loading && wallet" class="text-center">
+      <div *ngIf="!loading() && wallet()" class="text-center">
         <div class="text-4xl font-bold text-white mb-1">
-          {{ wallet.balance | currency }}
+          {{ wallet()?.balance | currency }}
         </div>
         <div class="text-sm text-indigo-100">Available Balance</div>
 
@@ -41,7 +41,7 @@
         <div class="bg-gray-50 p-4 rounded-lg text-center">
           <p class="text-gray-500 text-sm">This Month</p>
           <p class="text-indigo-600 text-2xl font-semibold mt-1">
-            {{ monthlyStats.spent | currency }}
+            {{ monthlyStats().spent | currency }}
           </p>
           <p class="text-gray-600 text-xs mt-1">Spent</p>
         </div>
@@ -49,7 +49,7 @@
         <div class="bg-gray-50 p-4 rounded-lg text-center">
           <p class="text-gray-500 text-sm">This Month</p>
           <p class="text-green-600 text-2xl font-semibold mt-1">
-            {{ monthlyStats.received | currency }}
+            {{ monthlyStats().received | currency }}
           </p>
           <p class="text-gray-600 text-xs mt-1">Received</p>
         </div>
@@ -57,7 +57,7 @@
         <div class="bg-gray-50 p-4 rounded-lg text-center">
           <p class="text-gray-500 text-sm">Total Transactions</p>
           <p class="text-blue-600 text-2xl font-semibold mt-1">
-            {{ monthlyStats.count }}
+            {{ monthlyStats().count }}
           </p>
           <p class="text-gray-600 text-xs mt-1">This Month</p>
         </div>
@@ -99,7 +99,7 @@
 
       <div *ngIf="!loading && paymentMethods.length > 0">
         <div
-          *ngFor="let method of paymentMethods"
+          *ngFor="let method of paymentMethods()"
           class="mb-4 last:mb-0 border rounded-lg p-3 cursor-pointer hover:bg-gray-50"
         >
           <div class="flex items-center">
@@ -131,7 +131,7 @@
             </div>
           </div>
           <div class="mt-2 flex justify-end">
-            <button mat-icon-button color="warn" (click)="removePaymentMethod(method.id)">
+            <button mat-icon-button color="warn" (click)="onRemovePaymentMethod(method.id!)">
               <mat-icon>delete</mat-icon>
             </button>
           </div>
@@ -197,7 +197,7 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr *ngFor="let transaction of transactions">
+            <tr *ngFor="let transaction of transactions()">
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
                   <div
@@ -298,7 +298,7 @@
       <mat-form-field class="w-full mt-4">
         <mat-label>Payment Method</mat-label>
         <mat-select formControlName="paymentMethodId" required>
-          <mat-option *ngFor="let method of paymentMethods" [value]="method.id">
+          <mat-option *ngFor="let method of paymentMethods()" [value]="method.id">
             {{ method.name }} -
             {{
               method.type === 'CARD'
@@ -318,7 +318,7 @@
     <button
       mat-raised-button
       color="primary"
-      (click)="addMoney()"
+      (click)="onAddMoney()"
       [disabled]="addMoneyForm.invalid || isProcessing"
     >
       <mat-spinner *ngIf="isProcessing" [diameter]="20" class="inline-block mr-2"></mat-spinner>
@@ -349,7 +349,7 @@
       <mat-form-field class="w-full mt-4">
         <mat-label>Destination Account</mat-label>
         <mat-select formControlName="paymentMethodId" required>
-          <mat-option *ngFor="let method of paymentMethods" [value]="method.id">
+          <mat-option *ngFor="let method of paymentMethods()" [value]="method.id">
             {{ method.name }} -
             {{
               method.type === 'CARD'
@@ -369,7 +369,7 @@
     <button
       mat-raised-button
       color="primary"
-      (click)="withdraw()"
+      (click)="onWithdraw()"
       [disabled]="withdrawForm.invalid || isProcessing"
     >
       <mat-spinner *ngIf="isProcessing" [diameter]="20" class="inline-block mr-2"></mat-spinner>
@@ -461,7 +461,7 @@
     <button
       mat-raised-button
       color="primary"
-      (click)="addPaymentMethod()"
+      (click)="onAddPaymentMethod()"
       [disabled]="paymentMethodForm.invalid || isProcessing"
     >
       <mat-spinner *ngIf="isProcessing" [diameter]="20" class="inline-block mr-2"></mat-spinner>

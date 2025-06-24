@@ -1,20 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
-
-enum ErrorCategory {
-  NETWORK = 'Network Error',
-  AUTHENTICATION = 'Authentication Error',
-  VALIDATION = 'Validation Error',
-  SERVER = 'Server Error',
-  UNKNOWN = 'Unknown Error',
-}
-
-interface ErrorDetails {
-  category: ErrorCategory;
-  message: string;
-  technical?: string;
-}
+import { ErrorDetails } from '../models/http.model';
 
 @Injectable({
   providedIn: 'root',
@@ -25,7 +12,7 @@ export class ErrorHandlingService {
   /**
    * Handle HTTP errors and show appropriate messages
    */
-  handleApiError(error: any, operation: string): void {
+  handleApiError(error: HttpErrorResponse | Error | unknown, operation: string): void {
     const errorDetails = this.categorizeError(error);
     console.error(`Error during ${operation}:`, errorDetails);
     this.showErrorMessage(errorDetails.message);
@@ -34,11 +21,11 @@ export class ErrorHandlingService {
   /**
    * Categorize errors based on type and status
    */
-  categorizeError(error: any): ErrorDetails {
+  categorizeError(error: HttpErrorResponse | Error | unknown): ErrorDetails {
     if (error instanceof HttpErrorResponse) {
       if (!navigator.onLine) {
         return {
-          category: ErrorCategory.NETWORK,
+          category: 'network',
           message: 'Please check your internet connection and try again',
           technical: 'Network offline',
         };
@@ -46,7 +33,7 @@ export class ErrorHandlingService {
 
       if (error.status === 0) {
         return {
-          category: ErrorCategory.NETWORK,
+          category: 'network',
           message: 'Unable to connect to the server. Please try again later',
           technical: `Status: ${error.status}, Message: ${error.message}`,
         };
@@ -54,7 +41,7 @@ export class ErrorHandlingService {
 
       if (error.status === 401) {
         return {
-          category: ErrorCategory.AUTHENTICATION,
+          category: 'client',
           message: 'Your session has expired. Please log in again',
           technical: `Status: ${error.status}, Message: ${error.message}`,
         };
@@ -62,7 +49,7 @@ export class ErrorHandlingService {
 
       if (error.status === 403) {
         return {
-          category: ErrorCategory.AUTHENTICATION,
+          category: 'client',
           message: 'You do not have permission to perform this action',
           technical: `Status: ${error.status}, Message: ${error.message}`,
         };
@@ -70,7 +57,7 @@ export class ErrorHandlingService {
 
       if (error.status === 422 || error.status === 400) {
         return {
-          category: ErrorCategory.VALIDATION,
+          category: 'client',
           message: this.extractValidationMessage(error) || 'Please check your input and try again',
           technical: `Status: ${error.status}, Message: ${JSON.stringify(error.error)}`,
         };
@@ -78,7 +65,7 @@ export class ErrorHandlingService {
 
       if (error.status >= 500) {
         return {
-          category: ErrorCategory.SERVER,
+          category: 'server',
           message: 'The server encountered an error. Please try again later',
           technical: `Status: ${error.status}, Message: ${error.message}`,
         };
@@ -86,9 +73,9 @@ export class ErrorHandlingService {
     }
 
     return {
-      category: ErrorCategory.UNKNOWN,
+      category: 'unknown',
       message: 'An unexpected error occurred. Please try again',
-      technical: error?.message || 'Unknown error',
+      technical: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 
@@ -98,7 +85,9 @@ export class ErrorHandlingService {
     }
 
     if (error.error?.errors && Array.isArray(error.error.errors)) {
-      return error.error.errors.map((e: any) => e.message || e).join(', ');
+      return error.error.errors
+        .map((e: { message: string } | string) => (typeof e === 'string' ? e : e.message || e))
+        .join(', ');
     }
 
     return '';

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import {
@@ -35,17 +35,30 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './signup.component.scss',
 })
 export class SignupComponent implements OnInit {
-  signupForm!: FormGroup;
-  loading = false;
-  error = '';
-  hidePassword = true;
-  hideConfirmPassword = true;
+  private router = inject(Router);
+  private authService = inject(AuthService);
+  private formBuilder = inject(FormBuilder);
 
-  constructor(
-    private formBuilder: FormBuilder,
-    private router: Router,
-    private authService: AuthService
-  ) {}
+  signupForm!: FormGroup;
+
+  // Signals for state management
+  loading = signal<boolean>(false);
+  error = signal<string>('');
+  hidePassword = signal<boolean>(true);
+  hideConfirmPassword = signal<boolean>(true);
+
+  constructor() {
+    // Effect to watch for auth state changes
+    effect(() => {
+      const isLoading = this.authService.isLoading();
+      this.loading.set(isLoading);
+
+      const authError = this.authService.error();
+      if (authError) {
+        this.error.set(authError);
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.signupForm = this.formBuilder.group(
@@ -80,28 +93,32 @@ export class SignupComponent implements OnInit {
       return;
     }
 
-    this.loading = true;
-    this.error = '';
+    this.loading.set(true);
+    this.error.set('');
 
     const { fullName, email, password, phoneNumber } = this.signupForm.value;
 
-    this.authService
-      .register({
-        fullName,
-        email,
-        password,
-        phoneNumber: phoneNumber || null,
-      })
-      .subscribe({
-        next: () => {
+    this.authService.register({
+      fullName,
+      email,
+      password,
+      phoneNumber: phoneNumber || null,
+    });
+
+    // Watch for completion
+    effect(() => {
+      if (!this.authService.isLoading()) {
+        this.loading.set(false);
+        const authError = this.authService.error();
+        if (authError) {
+          this.error.set(authError);
+        } else {
+          // Registration successful, navigate to login
           this.router.navigate(['/login'], {
             queryParams: { registered: 'true' },
           });
-        },
-        error: error => {
-          this.error = error.message || 'Registration failed. Please try again.';
-          this.loading = false;
-        },
-      });
+        }
+      }
+    });
   }
 }

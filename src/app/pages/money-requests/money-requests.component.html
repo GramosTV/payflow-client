@@ -41,10 +41,10 @@
               mat-flat-button
               color="primary"
               type="submit"
-              [disabled]="requestForm.invalid || isProcessing"
+              [disabled]="requestForm.invalid || isProcessing()"
             >
               <mat-spinner
-                *ngIf="isProcessing"
+                *ngIf="isProcessing()"
                 [diameter]="20"
                 class="mr-2 inline-block"
               ></mat-spinner>
@@ -62,7 +62,7 @@
           <h3 class="text-lg font-medium text-gray-800">Incoming Money Requests</h3>
           <div>
             <button mat-button [matMenuTriggerFor]="menu">
-              <span>{{ filterStatus }}</span>
+              <span>{{ filterStatus() }}</span>
               <mat-icon>arrow_drop_down</mat-icon>
             </button>
             <mat-menu #menu="matMenu">
@@ -74,21 +74,21 @@
           </div>
         </div>
 
-        <div *ngIf="loadingIncoming" class="flex justify-center py-12">
+        <div *ngIf="loadingIncoming()" class="flex justify-center py-12">
           <mat-spinner [diameter]="40"></mat-spinner>
         </div>
 
         <div
-          *ngIf="!loadingIncoming && filteredIncomingRequests.length === 0"
+          *ngIf="!loadingIncoming() && filteredIncomingRequests().length === 0"
           class="py-12 text-center text-gray-500"
         >
           <mat-icon class="text-6xl opacity-20">inbox</mat-icon>
           <p class="mt-2">No incoming requests found</p>
         </div>
 
-        <div *ngIf="!loadingIncoming && filteredIncomingRequests.length > 0">
+        <div *ngIf="!loadingIncoming() && filteredIncomingRequests().length > 0">
           <div
-            *ngFor="let request of filteredIncomingRequests"
+            *ngFor="let request of filteredIncomingRequests()"
             class="border-b border-gray-100 last:border-0 py-4"
           >
             <div class="flex items-start justify-between">
@@ -146,20 +146,23 @@
     <div class="p-6">
       <h3 class="text-lg font-medium text-gray-800 mb-4">Your Requests</h3>
 
-      <div *ngIf="loadingOutgoing" class="flex justify-center py-12">
+      <div *ngIf="loadingOutgoing()" class="flex justify-center py-12">
         <mat-spinner [diameter]="40"></mat-spinner>
       </div>
 
       <div
-        *ngIf="!loadingOutgoing && outgoingRequests.length === 0"
+        *ngIf="!loadingOutgoing() && outgoingRequests().length === 0"
         class="py-12 text-center text-gray-500"
       >
         <mat-icon class="text-6xl opacity-20">send</mat-icon>
         <p class="mt-2">No money requests sent</p>
       </div>
 
-      <div *ngIf="!loadingOutgoing && outgoingRequests.length > 0" class="divide-y divide-gray-100">
-        <div *ngFor="let request of outgoingRequests" class="py-4 first:pt-0 last:pb-0">
+      <div
+        *ngIf="!loadingOutgoing() && outgoingRequests().length > 0"
+        class="divide-y divide-gray-100"
+      >
+        <div *ngFor="let request of outgoingRequests()" class="py-4 first:pt-0 last:pb-0">
           <div class="flex items-start justify-between">
             <div class="flex items-start">
               <div class="mr-3">
@@ -210,15 +213,15 @@
 
 <!-- Payment Dialog -->
 <ng-template #paymentDialogTmpl>
-  <div *ngIf="selectedRequest">
+  <div *ngIf="selectedRequest()">
     <h2 mat-dialog-title>Pay Money Request</h2>
     <div mat-dialog-content class="space-y-4">
       <div class="text-center py-4">
         <div class="font-medium text-gray-700">
-          {{ selectedRequest.requesterName }} is requesting
+          {{ selectedRequest()?.requesterName }} is requesting
         </div>
         <div class="text-2xl font-bold text-indigo-700">
-          {{ selectedRequest.amount | currency }}
+          {{ selectedRequest()?.amount | currency }}
         </div>
       </div>
 
@@ -227,17 +230,17 @@
       <div>
         <div class="text-sm text-gray-500">Description</div>
         <div class="font-medium">
-          {{ selectedRequest.description || 'No description provided' }}
+          {{ selectedRequest()?.description || 'No description provided' }}
         </div>
       </div>
 
       <mat-form-field class="w-full mt-4">
         <mat-label>Payment Method</mat-label>
         <mat-select [formControl]="paymentMethodControl">
-          <mat-option value="WALLET">Wallet Balance</mat-option>
-          <mat-option *ngFor="let method of paymentMethods" [value]="method.id">
+          <mat-option [value]="PaymentMethodType.WALLET">Wallet Balance</mat-option>
+          <mat-option *ngFor="let method of paymentMethods()" [value]="method.id">
             {{ method.name }} ({{
-              method.type === 'CARD'
+              method.type === PaymentMethodType.CARD
                 ? '•••• ' + method.lastFourDigits
                 : 'ending in ' + method.lastFourDigits
             }})
@@ -246,17 +249,25 @@
       </mat-form-field>
 
       <div
-        *ngIf="paymentMethodControl.value === 'WALLET'"
+        *ngIf="paymentMethodControl.value === PaymentMethodType.WALLET"
         class="text-sm flex items-center justify-between"
       >
         <span class="text-gray-700">Wallet Balance:</span>
-        <span [ngClass]="{ 'text-red-600': walletBalance < selectedRequest.amount }">
-          {{ walletBalance | currency }}
+        <span
+          [ngClass]="{
+            'text-red-600': selectedRequest() && walletBalance() < (selectedRequest()?.amount || 0),
+          }"
+        >
+          {{ walletBalance() | currency }}
         </span>
       </div>
 
       <div
-        *ngIf="paymentMethodControl.value === 'WALLET' && walletBalance < selectedRequest.amount"
+        *ngIf="
+          paymentMethodControl.value === PaymentMethodType.WALLET &&
+          selectedRequest() &&
+          walletBalance() < (selectedRequest()?.amount || 0)
+        "
         class="text-xs text-red-600 mt-1"
       >
         Insufficient balance. Please select another payment method.
@@ -269,16 +280,18 @@
         color="primary"
         (click)="confirmPayment()"
         [disabled]="
-          paymentProcessing ||
-          (paymentMethodControl.value === 'WALLET' && walletBalance < selectedRequest.amount)
+          paymentProcessing() ||
+          (paymentMethodControl.value === PaymentMethodType.WALLET &&
+            selectedRequest() &&
+            walletBalance() < (selectedRequest()?.amount || 0))
         "
       >
         <mat-spinner
-          *ngIf="paymentProcessing"
+          *ngIf="paymentProcessing()"
           [diameter]="20"
           class="mr-2 inline-block"
         ></mat-spinner>
-        Pay {{ selectedRequest.amount | currency }}
+        Pay {{ selectedRequest()?.amount | currency }}
       </button>
     </div>
   </div>

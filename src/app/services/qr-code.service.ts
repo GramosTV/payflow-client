@@ -1,92 +1,73 @@
-import { Injectable, OnDestroy } from '@angular/core';
-import { Observable, Subject, throwError } from 'rxjs';
-import { map, catchError, takeUntil } from 'rxjs/operators';
-import { ApiService } from './api.service';
-import { ErrorHandlingService } from './error-handling.service';
+import { Injectable, inject } from '@angular/core';
+import { QRCodeStore } from '../stores/qr-code.store';
 import { QRCode } from '../models/qr-code.model';
-import { Transaction } from '../models/transaction.model';
 
 @Injectable({
   providedIn: 'root',
 })
-export class QRCodeService implements OnDestroy {
-  private destroy$ = new Subject<void>();
-
-  constructor(
-    private apiService: ApiService,
-    private errorHandlingService: ErrorHandlingService
-  ) {}
+export class QRCodeService {
+  private qrCodeStore = inject(QRCodeStore);
 
   /**
-   * Clean up subscriptions when service is destroyed
+   * Get QR codes signal
    */
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+  get qrCodes() {
+    return this.qrCodeStore.qrCodes;
   }
 
   /**
-   * Get all QR codes for the current user
-   * @returns Observable of QRCode array
+   * Get current QR code signal
    */
-  getUserQRCodes(): Observable<QRCode[]> {
-    return this.apiService.get<QRCode[]>('qr-codes').pipe(
-      takeUntil(this.destroy$),
-      catchError(error => {
-        this.errorHandlingService.handleApiError(error, 'Failed to retrieve QR codes');
-        return throwError(() => error);
-      })
-    );
+  get currentQRCode() {
+    return this.qrCodeStore.currentQRCode;
   }
 
   /**
-   * Get QR code by ID
+   * Get QR code image signal
+   */
+  get qrCodeImage() {
+    return this.qrCodeStore.qrCodeImage;
+  }
+
+  /**
+   * Get loading state signal
+   */
+  get isLoading() {
+    return this.qrCodeStore.isLoading;
+  }
+
+  /**
+   * Get error state signal
+   */
+  get error() {
+    return this.qrCodeStore.error;
+  }
+  /**
+   * Load all QR codes for the current user
+   */
+  loadUserQRCodes(): void {
+    this.qrCodeStore.loadUserQRCodes();
+  }
+
+  /**
+   * Load QR code by ID
    * @param id QR Code ID
-   * @returns Observable of QRCode
    */
-  getQRCodeById(id: number): Observable<QRCode> {
-    return this.apiService.get<QRCode>(`qr-codes/${id}`).pipe(
-      takeUntil(this.destroy$),
-      catchError(error => {
-        this.errorHandlingService.handleApiError(
-          error,
-          `Failed to retrieve QR code with ID: ${id}`
-        );
-        return throwError(() => error);
-      })
-    );
+  loadQRCodeById(id: number): void {
+    this.qrCodeStore.loadQRCodeById({ id });
   }
 
   /**
-   * Get QR code image by ID
+   * Load QR code image by ID
    * @param id QR Code ID
-   * @returns Observable of image data string
    */
-  getQRCodeImageById(id: number): Observable<string> {
-    return this.apiService
-      .get<{ imageData: string; qrId: string; id: string }>(`qr-codes/${id}/image`)
-      .pipe(
-        takeUntil(this.destroy$),
-        map(response => {
-          if (!response.imageData) {
-            throw new Error('Image data is missing in the response');
-          }
-          return response.imageData;
-        }),
-        catchError(error => {
-          this.errorHandlingService.handleApiError(
-            error,
-            `Failed to retrieve QR code image with ID: ${id}`
-          );
-          return throwError(() => error);
-        })
-      );
+  loadQRCodeImage(id: number): void {
+    this.qrCodeStore.loadQRCodeImage({ id });
   }
 
   /**
    * Create a new QR code
    * @param qrCodeData QR code data to create
-   * @returns Observable of created QRCode
    */
   createQRCode(qrCodeData: {
     walletNumber: string;
@@ -95,89 +76,34 @@ export class QRCodeService implements OnDestroy {
     isOneTime: boolean;
     description?: string;
     expiresAt?: Date;
-  }): Observable<QRCode> {
-    return this.apiService.post<QRCode>('qr-codes', qrCodeData).pipe(
-      takeUntil(this.destroy$),
-      catchError(error => {
-        this.errorHandlingService.handleApiError(error, 'Failed to create QR code');
-        return throwError(() => error);
-      })
-    );
+  }): void {
+    this.qrCodeStore.createQRCode(qrCodeData);
+  }
+  /**
+   * Pay a QR code
+   * @param qrId QR Code ID
+   * @param amount Payment amount
+   * @param paymentMethodId Payment method ID
+   */ payQRCode(qrId: string, amount: number, paymentMethodId: number): void {
+    this.qrCodeStore.processQRCodePayment({
+      qrCodeId: qrId,
+      amount,
+      paymentMethodId: paymentMethodId.toString(),
+    });
   }
 
   /**
-   * Generate a payment QR code (alias for createQRCode with defaults)
-   * @param qrCodeData QR code configuration data
-   * @returns Observable of created QRCode
+   * Deactivate a QR code
+   * @param id QR Code ID
    */
-  generatePaymentQRCode(qrCodeData: {
-    walletNumber?: string;
-    amount?: number;
-    isAmountFixed?: boolean;
-    isOneTime?: boolean;
-    description?: string;
-    expiresAt?: Date;
-    expirationMinutes?: number;
-  }): Observable<QRCode> {
-    // Set default values if not provided
-    const finalData = {
-      ...qrCodeData,
-      walletNumber: qrCodeData.walletNumber || '', // Wallet number is required
-      isAmountFixed: qrCodeData.isAmountFixed ?? true,
-      isOneTime: qrCodeData.isOneTime ?? true,
-    };
-
-    // Handle expiration minutes by converting to expiresAt date
-    if (qrCodeData.expirationMinutes && !qrCodeData.expiresAt) {
-      const expiresAt = new Date();
-      expiresAt.setMinutes(expiresAt.getMinutes() + qrCodeData.expirationMinutes);
-      finalData.expiresAt = expiresAt;
-    }
-
-    return this.createQRCode(finalData);
+  deactivateQRCode(id: number): void {
+    this.qrCodeStore.deactivateQRCode({ id });
   }
 
   /**
-   * Process payment using QR code
-   * @param data Payment data including QR code ID
-   * @returns Observable of Transaction
+   * Clear error state
    */
-  processQRCodePayment(data: {
-    qrCodeId: string;
-    amount?: number;
-    paymentMethodId?: string;
-    sourceWalletNumber?: string;
-  }): Observable<Transaction> {
-    return this.apiService
-      .post<Transaction>(`qr-codes/${data.qrCodeId}/pay`, {
-        sourceWalletNumber: data.sourceWalletNumber,
-        amount: data.amount,
-        paymentMethodId: data.paymentMethodId,
-      })
-      .pipe(
-        takeUntil(this.destroy$),
-        catchError(error => {
-          this.errorHandlingService.handleApiError(error, 'Failed to process QR code payment');
-          return throwError(() => error);
-        })
-      );
-  }
-
-  /**
-   * Deactivate QR code
-   * @param id QR code ID to deactivate
-   * @returns Observable of updated QRCode
-   */
-  deactivateQRCode(id: number): Observable<QRCode> {
-    return this.apiService.post<QRCode>(`qr-codes/${id}/deactivate`, {}).pipe(
-      takeUntil(this.destroy$),
-      catchError(error => {
-        this.errorHandlingService.handleApiError(
-          error,
-          `Failed to deactivate QR code with ID: ${id}`
-        );
-        return throwError(() => error);
-      })
-    );
+  clearError(): void {
+    this.qrCodeStore.clearError();
   }
 }

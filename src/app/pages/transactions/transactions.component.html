@@ -8,7 +8,8 @@
           <input
             matInput
             placeholder="Search by description or ID"
-            [(ngModel)]="searchTerm"
+            [ngModel]="searchTerm()"
+            (ngModelChange)="searchTerm.set($event)"
             (keyup)="applyFilter()"
           />
           <mat-icon matSuffix>search</mat-icon>
@@ -18,7 +19,11 @@
       <div class="flex gap-4">
         <mat-form-field>
           <mat-label>Transaction Type</mat-label>
-          <mat-select [(ngModel)]="filterType" (selectionChange)="applyFilter()">
+          <mat-select
+            [ngModel]="filterType()"
+            (ngModelChange)="filterType.set($event)"
+            (selectionChange)="applyFilter()"
+          >
             <mat-option value="">All Types</mat-option>
             <mat-option value="DEPOSIT">Deposit</mat-option>
             <mat-option value="WITHDRAWAL">Withdrawal</mat-option>
@@ -30,7 +35,11 @@
 
         <mat-form-field>
           <mat-label>Status</mat-label>
-          <mat-select [(ngModel)]="filterStatus" (selectionChange)="applyFilter()">
+          <mat-select
+            [ngModel]="filterStatus()"
+            (ngModelChange)="filterStatus.set($event)"
+            (selectionChange)="applyFilter()"
+          >
             <mat-option value="">All Status</mat-option>
             <mat-option value="PENDING">Pending</mat-option>
             <mat-option value="COMPLETED">Completed</mat-option>
@@ -40,7 +49,11 @@
 
         <mat-form-field>
           <mat-label>Date Range</mat-label>
-          <mat-select [(ngModel)]="dateRange" (selectionChange)="applyFilter()">
+          <mat-select
+            [ngModel]="dateRange()"
+            (ngModelChange)="dateRange.set($event)"
+            (selectionChange)="applyFilter()"
+          >
             <mat-option value="7">Last 7 days</mat-option>
             <mat-option value="30">Last 30 days</mat-option>
             <mat-option value="90">Last 3 months</mat-option>
@@ -58,12 +71,12 @@
     <div class="p-6">
       <h3 class="text-lg font-medium text-gray-800 mb-4">Transaction History</h3>
 
-      <div *ngIf="loading" class="flex justify-center py-12">
+      <div *ngIf="loading()" class="flex justify-center py-12">
         <mat-spinner [diameter]="50"></mat-spinner>
       </div>
 
       <div
-        *ngIf="!loading && filteredTransactions.length === 0"
+        *ngIf="!loading() && filteredTransactions().length === 0"
         class="py-12 text-center text-gray-500"
       >
         <mat-icon class="text-6xl opacity-20">receipt_long</mat-icon>
@@ -71,7 +84,7 @@
       </div>
 
       <!-- Transactions Table -->
-      <div *ngIf="!loading && filteredTransactions.length > 0">
+      <div *ngIf="!loading() && filteredTransactions().length > 0">
         <div class="overflow-x-auto">
           <table mat-table [dataSource]="dataSource" matSort class="w-full">
             <!-- Type Column -->
@@ -83,26 +96,32 @@
                     class="w-8 h-8 rounded-full flex items-center justify-center mr-2"
                     [ngClass]="{
                       'bg-green-100':
-                        transaction.type === 'DEPOSIT' || transaction.type === 'RECEIVED',
+                        transaction.type === TransactionType.DEPOSIT ||
+                        transaction.type === TransactionType.RECEIVED,
                       'bg-red-100':
-                        transaction.type === 'WITHDRAWAL' || transaction.type === 'SENT',
-                      'bg-blue-100': transaction.type === 'TRANSFER',
+                        transaction.type === TransactionType.WITHDRAWAL ||
+                        transaction.type === TransactionType.SENT,
+                      'bg-blue-100': transaction.type === TransactionType.TRANSFER,
                     }"
                   >
                     <mat-icon
                       class="text-sm"
                       [ngClass]="{
                         'text-green-600':
-                          transaction.type === 'DEPOSIT' || transaction.type === 'RECEIVED',
+                          transaction.type === TransactionType.DEPOSIT ||
+                          transaction.type === TransactionType.RECEIVED,
                         'text-red-600':
-                          transaction.type === 'WITHDRAWAL' || transaction.type === 'SENT',
-                        'text-blue-600': transaction.type === 'TRANSFER',
+                          transaction.type === TransactionType.WITHDRAWAL ||
+                          transaction.type === TransactionType.SENT,
+                        'text-blue-600': transaction.type === TransactionType.TRANSFER,
                       }"
                     >
                       {{
-                        transaction.type === 'DEPOSIT' || transaction.type === 'RECEIVED'
+                        transaction.type === TransactionType.DEPOSIT ||
+                        transaction.type === TransactionType.RECEIVED
                           ? 'arrow_downward'
-                          : transaction.type === 'WITHDRAWAL' || transaction.type === 'SENT'
+                          : transaction.type === TransactionType.WITHDRAWAL ||
+                              transaction.type === TransactionType.SENT
                             ? 'arrow_upward'
                             : 'swap_horiz'
                       }}
@@ -149,16 +168,20 @@
                   class="font-medium"
                   [ngClass]="{
                     'text-green-600':
-                      transaction.type === 'DEPOSIT' || transaction.type === 'RECEIVED',
+                      transaction.type === TransactionType.DEPOSIT ||
+                      transaction.type === TransactionType.RECEIVED,
                     'text-red-600':
-                      transaction.type === 'WITHDRAWAL' || transaction.type === 'SENT',
-                    'text-gray-900': transaction.type === 'TRANSFER',
+                      transaction.type === TransactionType.WITHDRAWAL ||
+                      transaction.type === TransactionType.SENT,
+                    'text-gray-900': transaction.type === TransactionType.TRANSFER,
                   }"
                 >
                   {{
-                    transaction.type === 'DEPOSIT' || transaction.type === 'RECEIVED'
+                    transaction.type === TransactionType.DEPOSIT ||
+                    transaction.type === TransactionType.RECEIVED
                       ? '+'
-                      : transaction.type === 'WITHDRAWAL' || transaction.type === 'SENT'
+                      : transaction.type === TransactionType.WITHDRAWAL ||
+                          transaction.type === TransactionType.SENT
                         ? '-'
                         : ''
                   }}{{ transaction.amount | currency }}
@@ -190,7 +213,7 @@
                 <button
                   mat-icon-button
                   color="primary"
-                  (click)="openTransactionDetails(transaction)"
+                  (click)="viewTransactionDetails(transaction)"
                 >
                   <mat-icon>visibility</mat-icon>
                 </button>
@@ -202,7 +225,7 @@
               mat-row
               *matRowDef="let row; columns: displayedColumns"
               class="hover:bg-gray-50 cursor-pointer"
-              (click)="openTransactionDetails(row)"
+              (click)="viewTransactionDetails(row)"
             ></tr>
           </table>
 
@@ -223,26 +246,32 @@
           class="w-16 h-16 rounded-full flex items-center justify-center"
           [ngClass]="{
             'bg-green-100':
-              selectedTransaction.type === 'DEPOSIT' || selectedTransaction.type === 'RECEIVED',
+              selectedTransaction()?.type === 'DEPOSIT' ||
+              selectedTransaction()?.type === 'RECEIVED',
             'bg-red-100':
-              selectedTransaction.type === 'WITHDRAWAL' || selectedTransaction.type === 'SENT',
-            'bg-blue-100': selectedTransaction.type === 'TRANSFER',
+              selectedTransaction()?.type === 'WITHDRAWAL' ||
+              selectedTransaction()?.type === 'SENT',
+            'bg-blue-100': selectedTransaction()?.type === 'TRANSFER',
           }"
         >
           <mat-icon
             class="text-3xl"
             [ngClass]="{
               'text-green-600':
-                selectedTransaction.type === 'DEPOSIT' || selectedTransaction.type === 'RECEIVED',
+                selectedTransaction()?.type === 'DEPOSIT' ||
+                selectedTransaction()?.type === 'RECEIVED',
               'text-red-600':
-                selectedTransaction.type === 'WITHDRAWAL' || selectedTransaction.type === 'SENT',
-              'text-blue-600': selectedTransaction.type === 'TRANSFER',
+                selectedTransaction()?.type === 'WITHDRAWAL' ||
+                selectedTransaction()?.type === 'SENT',
+              'text-blue-600': selectedTransaction()?.type === 'TRANSFER',
             }"
           >
             {{
-              selectedTransaction.type === 'DEPOSIT' || selectedTransaction.type === 'RECEIVED'
+              selectedTransaction()?.type === 'DEPOSIT' ||
+              selectedTransaction()?.type === 'RECEIVED'
                 ? 'arrow_downward'
-                : selectedTransaction.type === 'WITHDRAWAL' || selectedTransaction.type === 'SENT'
+                : selectedTransaction()?.type === 'WITHDRAWAL' ||
+                    selectedTransaction()?.type === 'SENT'
                   ? 'arrow_upward'
                   : 'swap_horiz'
             }}
@@ -255,22 +284,25 @@
           class="text-xl font-bold"
           [ngClass]="{
             'text-green-600':
-              selectedTransaction.type === 'DEPOSIT' || selectedTransaction.type === 'RECEIVED',
+              selectedTransaction()?.type === 'DEPOSIT' ||
+              selectedTransaction()?.type === 'RECEIVED',
             'text-red-600':
-              selectedTransaction.type === 'WITHDRAWAL' || selectedTransaction.type === 'SENT',
-            'text-gray-900': selectedTransaction.type === 'TRANSFER',
+              selectedTransaction()?.type === 'WITHDRAWAL' ||
+              selectedTransaction()?.type === 'SENT',
+            'text-gray-900': selectedTransaction()?.type === 'TRANSFER',
           }"
         >
           {{
-            selectedTransaction.type === 'DEPOSIT' || selectedTransaction.type === 'RECEIVED'
+            selectedTransaction()?.type === 'DEPOSIT' || selectedTransaction()?.type === 'RECEIVED'
               ? '+'
-              : selectedTransaction.type === 'WITHDRAWAL' || selectedTransaction.type === 'SENT'
+              : selectedTransaction()?.type === 'WITHDRAWAL' ||
+                  selectedTransaction()?.type === 'SENT'
                 ? '-'
                 : ''
-          }}{{ selectedTransaction.amount | currency }}
+          }}{{ selectedTransaction()?.amount | currency }}
         </div>
         <div class="text-sm text-gray-500">
-          {{ selectedTransaction.timestamp | date: 'medium' }}
+          {{ selectedTransaction()?.timestamp | date: 'medium' }}
         </div>
       </div>
 
@@ -280,7 +312,7 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <div class="text-sm text-gray-500">Transaction Type</div>
-            <div class="font-medium">{{ selectedTransaction.type }}</div>
+            <div class="font-medium">{{ selectedTransaction()?.type }}</div>
           </div>
           <div>
             <div class="text-sm text-gray-500">Status</div>
@@ -288,29 +320,29 @@
               <span
                 class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
                 [ngClass]="{
-                  'bg-green-100 text-green-800': selectedTransaction.status === 'COMPLETED',
-                  'bg-yellow-100 text-yellow-800': selectedTransaction.status === 'PENDING',
-                  'bg-red-100 text-red-800': selectedTransaction.status === 'FAILED',
+                  'bg-green-100 text-green-800': selectedTransaction()?.status === 'COMPLETED',
+                  'bg-yellow-100 text-yellow-800': selectedTransaction()?.status === 'PENDING',
+                  'bg-red-100 text-red-800': selectedTransaction()?.status === 'FAILED',
                 }"
               >
-                {{ selectedTransaction.status }}
+                {{ selectedTransaction()?.status }}
               </span>
             </div>
           </div>
           <div>
             <div class="text-sm text-gray-500">Transaction ID</div>
-            <div class="font-medium">{{ selectedTransaction.id }}</div>
+            <div class="font-medium">{{ selectedTransaction()?.id }}</div>
           </div>
           <div>
             <div class="text-sm text-gray-500">Reference</div>
             <div class="font-medium">
-              {{ selectedTransaction.reference || 'N/A' }}
+              {{ selectedTransaction()?.reference || 'N/A' }}
             </div>
           </div>
           <div class="col-span-2">
             <div class="text-sm text-gray-500">Description</div>
             <div class="font-medium">
-              {{ selectedTransaction.description || 'No description' }}
+              {{ selectedTransaction()?.description || 'No description' }}
             </div>
           </div>
         </div>
@@ -318,14 +350,14 @@
 
       <mat-divider></mat-divider>
 
-      <div *ngIf="selectedTransaction.senderName || selectedTransaction.recipientName">
-        <div *ngIf="selectedTransaction.senderName">
+      <div *ngIf="selectedTransaction()?.senderName || selectedTransaction()?.recipientName">
+        <div *ngIf="selectedTransaction()?.senderName">
           <div class="text-sm text-gray-500">From</div>
-          <div class="font-medium">{{ selectedTransaction.senderName }}</div>
+          <div class="font-medium">{{ selectedTransaction()?.senderName }}</div>
         </div>
-        <div *ngIf="selectedTransaction.recipientName" class="mt-2">
+        <div *ngIf="selectedTransaction()?.recipientName" class="mt-2">
           <div class="text-sm text-gray-500">To</div>
-          <div class="font-medium">{{ selectedTransaction.recipientName }}</div>
+          <div class="font-medium">{{ selectedTransaction()?.recipientName }}</div>
         </div>
       </div>
     </div>
@@ -335,7 +367,7 @@
         mat-raised-button
         color="primary"
         [matDialogClose]="true"
-        *ngIf="selectedTransaction.status === 'COMPLETED'"
+        *ngIf="selectedTransaction()?.status === 'COMPLETED'"
       >
         Download Receipt
       </button>

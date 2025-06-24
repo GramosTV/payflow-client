@@ -31,7 +31,7 @@ import { MoneyRequestService } from '../../services/money-request.service';
 import { WalletService } from '../../services/wallet.service';
 import { MoneyRequest, RequestStatus } from '../../models/money-request.model';
 import { Wallet } from '../../models/wallet.model';
-import { PaymentMethod, PaymentMethodType } from '../../models/payment.model';
+import { PaymentMethod } from '../../models/payment.model';
 
 @Component({
   selector: 'app-money-requests',
@@ -62,12 +62,8 @@ export class MoneyRequestsComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private formBuilder = inject(FormBuilder);
 
-  // Expose enums for template use
-  readonly RequestStatus = RequestStatus;
-  readonly PaymentMethodType = PaymentMethodType;
-
   requestForm: FormGroup;
-  paymentMethodControl = new FormControl(PaymentMethodType.WALLET);
+  paymentMethodControl = new FormControl('WALLET');
 
   // Signals for state management
   selectedRequest = signal<MoneyRequest | null>(null);
@@ -103,6 +99,8 @@ export class MoneyRequestsComponent implements OnInit {
     const statusEnum = statusMap[filter];
     return statusEnum ? requests.filter(r => r.status === statusEnum) : requests;
   });
+
+  RequestStatus = RequestStatus; // Expose enum to template
 
   constructor() {
     this.requestForm = this.formBuilder.group({
@@ -200,7 +198,7 @@ export class MoneyRequestsComponent implements OnInit {
 
   payRequest(request: MoneyRequest): void {
     this.selectedRequest.set(request);
-    this.paymentMethodControl.setValue(PaymentMethodType.WALLET);
+    this.paymentMethodControl.setValue('WALLET');
     this.dialog.open(this.paymentDialogTmpl, {
       width: '400px',
     });

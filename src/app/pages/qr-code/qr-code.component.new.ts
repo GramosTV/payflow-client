@@ -30,7 +30,7 @@ import { WalletService } from '../../services/wallet.service';
 import { ScannerService } from '../../services/scanner.service';
 import { ErrorHandlingService } from '../../services/error-handling.service';
 import { Wallet } from '../../models/wallet.model';
-import { PaymentMethod, PaymentMethodType } from '../../models/payment.model';
+import { PaymentMethod } from '../../models/payment.model';
 
 interface ScanResult {
   userId: string;
@@ -70,16 +70,13 @@ export class QrCodeComponent implements OnInit, OnDestroy {
   private errorHandler = inject(ErrorHandlingService);
   private formBuilder = inject(FormBuilder);
 
-  // Expose enums for template use
-  readonly PaymentMethodType = PaymentMethodType;
-
   qrCodeForm: FormGroup;
 
   // Signals for state management
   isScanning = signal<boolean>(false);
   scanActive = signal<boolean>(false);
   scanResult = signal<ScanResult | null>(null);
-  paymentMethodId = signal<string>(PaymentMethodType.WALLET);
+  paymentMethodId = signal<string>('WALLET');
   paymentAmount = signal<number | null>(null);
   customAmount = signal<number | undefined>(undefined);
   processingPayment = signal<boolean>(false);
@@ -239,11 +236,12 @@ export class QrCodeComponent implements OnInit, OnDestroy {
       }
     });
   }
+
   resetPayment(): void {
     this.scanResult.set(null);
     this.paymentAmount.set(null);
     this.customAmount.set(undefined);
-    this.paymentMethodId.set(PaymentMethodType.WALLET);
+    this.paymentMethodId.set('WALLET');
   }
 
   downloadQRCode(): void {

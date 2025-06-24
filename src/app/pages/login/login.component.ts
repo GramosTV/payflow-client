@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -8,7 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AuthService } from '../../services/auth.service';
+import { AuthStore } from '../../stores/auth.store';
 
 @Component({
   selector: 'app-login',
@@ -28,18 +28,27 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './login.component.scss',
 })
 export class LoginComponent implements OnInit {
+  private authStore = inject(AuthStore);
+  private formBuilder = inject(FormBuilder);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
   loginForm!: FormGroup;
-  loading = false;
-  error = '';
   hidePassword = true;
   returnUrl = '/';
 
-  constructor(
-    private formBuilder: FormBuilder,
-    private route: ActivatedRoute,
-    private router: Router,
-    private authService: AuthService
-  ) {}
+  // Get signals from store
+  loading = this.authStore.isLoading;
+  error = this.authStore.error;
+
+  constructor() {
+    // Effect to handle navigation on successful login
+    effect(() => {
+      if (this.authStore.isAuthenticated() && !this.authStore.isLoading()) {
+        this.router.navigate([this.returnUrl]);
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.loginForm = this.formBuilder.group({
@@ -52,7 +61,7 @@ export class LoginComponent implements OnInit {
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
 
     // Auto-redirect if already logged in
-    if (this.authService.isLoggedIn()) {
+    if (this.authStore.isAuthenticated()) {
       this.router.navigate([this.returnUrl]);
     }
   }
@@ -62,22 +71,14 @@ export class LoginComponent implements OnInit {
       return;
     }
 
-    this.loading = true;
-    this.error = '';
-
     const { email, password, rememberMe } = this.loginForm.value;
 
-    this.authService.login(email, password).subscribe({
-      next: () => {
-        if (rememberMe) {
-          this.authService.saveRememberMe();
-        }
-        this.router.navigate([this.returnUrl]);
-      },
-      error: error => {
-        this.error = error.message || 'Invalid email or password';
-        this.loading = false;
-      },
-    });
+    // Store remember me preference in localStorage if needed
+    if (rememberMe) {
+      localStorage.setItem('remember_me', 'true');
+    }
+
+    // Use the store to login
+    this.authStore.login({ email, password });
   }
 }

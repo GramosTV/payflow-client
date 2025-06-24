@@ -1,18 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { forkJoin } from 'rxjs';
 
-import { WalletService } from '../../services/wallet.service';
-import { TransactionService } from '../../services/transaction.service';
-import { MoneyRequestService } from '../../services/money-request.service';
+import { WalletStore } from '../../stores/wallet.store';
+import { TransactionStore } from '../../stores/transaction.store';
+import { MoneyRequestStore } from '../../stores/money-request.store';
 import { ExchangeRateService } from '../../services/exchange-rate.service';
 
 import { Wallet } from '../../models/wallet.model';
-import { Transaction } from '../../models/transaction.model';
+import { Transaction, TransactionType } from '../../models/transaction.model';
 import { MoneyRequest } from '../../models/money-request.model';
 import { ExchangeRate } from '../../models/exchange-rate.model';
 
@@ -24,42 +23,38 @@ import { ExchangeRate } from '../../models/exchange-rate.model';
   styleUrl: './dashboard.component.scss',
 })
 export class DashboardComponent implements OnInit {
-  loading = true;
-  wallet: Wallet | null = null;
-  recentTransactions: Transaction[] = [];
-  pendingRequests: MoneyRequest[] = [];
-  exchangeRates: ExchangeRate[] = [];
+  private walletStore = inject(WalletStore);
+  private transactionStore = inject(TransactionStore);
+  private moneyRequestStore = inject(MoneyRequestStore);
+  private exchangeRateService = inject(ExchangeRateService);
+  // Expose enums for template use
+  readonly TransactionType = TransactionType;
 
-  constructor(
-    private walletService: WalletService,
-    private transactionService: TransactionService,
-    private moneyRequestService: MoneyRequestService,
-    private exchangeRateService: ExchangeRateService
-  ) {}
+  // Get signals from stores
+  wallet = this.walletStore.wallet;
+  recentTransactions = this.transactionStore.recentTransactions;
+  pendingRequests = this.moneyRequestStore.pendingRequests;
+  loading = this.walletStore.isLoading;
+
+  exchangeRates: ExchangeRate[] = [];
 
   ngOnInit(): void {
     this.loadDashboardData();
   }
 
   loadDashboardData(): void {
-    this.loading = true;
+    // Load data from stores
+    this.walletStore.loadWallet();
+    this.transactionStore.loadRecentTransactions({ limit: 5 });
+    this.moneyRequestStore.loadPendingRequests();
 
-    forkJoin({
-      wallet: this.walletService.getWallet(),
-      transactions: this.transactionService.getRecentTransactions(5),
-      requests: this.moneyRequestService.getPendingRequests(),
-      rates: this.exchangeRateService.getExchangeRates(),
-    }).subscribe({
-      next: result => {
-        this.wallet = result.wallet;
-        this.recentTransactions = result.transactions;
-        this.pendingRequests = result.requests;
-        this.exchangeRates = result.rates;
-        this.loading = false;
+    // Load exchange rates (still using service as it's not migrated)
+    this.exchangeRateService.getExchangeRates().subscribe({
+      next: rates => {
+        this.exchangeRates = rates;
       },
       error: error => {
-        console.error('Error loading dashboard data', error);
-        this.loading = false;
+        console.error('Error loading exchange rates:', error);
       },
     });
   }

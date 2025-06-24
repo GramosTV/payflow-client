@@ -8,11 +8,11 @@
     <form class="mt-8 space-y-6" [formGroup]="signupForm" (ngSubmit)="onSubmit()">
       <!-- Alert for errors -->
       <div
-        *ngIf="error"
+        *ngIf="error()"
         class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md text-sm"
         role="alert"
       >
-        {{ error }}
+        {{ error() }}
       </div>
 
       <!-- Full Name -->
@@ -48,12 +48,17 @@
           <mat-label>Password</mat-label>
           <input
             matInput
-            [type]="hidePassword ? 'password' : 'text'"
+            [type]="hidePassword() ? 'password' : 'text'"
             formControlName="password"
             required
           />
-          <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" tabindex="-1">
-            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          <button
+            mat-icon-button
+            matSuffix
+            (click)="hidePassword.set(!hidePassword())"
+            tabindex="-1"
+          >
+            <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
           <mat-error *ngIf="signupForm.get('password')?.hasError('required')">
             Password is required
@@ -70,17 +75,17 @@
           <mat-label>Confirm Password</mat-label>
           <input
             matInput
-            [type]="hideConfirmPassword ? 'password' : 'text'"
+            [type]="hideConfirmPassword() ? 'password' : 'text'"
             formControlName="confirmPassword"
             required
           />
           <button
             mat-icon-button
             matSuffix
-            (click)="hideConfirmPassword = !hideConfirmPassword"
+            (click)="hideConfirmPassword.set(!hideConfirmPassword())"
             tabindex="-1"
           >
-            <mat-icon>{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
           <mat-error *ngIf="signupForm.get('confirmPassword')?.hasError('required')">
             Please confirm your password
@@ -121,13 +126,13 @@
       <div>
         <button
           type="submit"
-          [disabled]="loading || !signupForm.valid"
+          [disabled]="loading() || !signupForm.valid"
           class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
-          <span *ngIf="loading" class="absolute left-0 inset-y-0 flex items-center pl-3">
+          <span *ngIf="loading()" class="absolute left-0 inset-y-0 flex items-center pl-3">
             <mat-spinner [diameter]="20"></mat-spinner>
           </span>
-          <span *ngIf="!loading" class="absolute left-0 inset-y-0 flex items-center pl-3">
+          <span *ngIf="!loading()" class="absolute left-0 inset-y-0 flex items-center pl-3">
             <mat-icon class="h-5 w-5 text-indigo-500 group-hover:text-indigo-400"
               >how_to_reg</mat-icon
             >

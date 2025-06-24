@@ -1,5 +1,4 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
 
 interface QRCodeResult {
   qrId: string;
@@ -20,8 +19,9 @@ export class ScannerService {
   private scannerEnabled = false;
   private scanInterval: ReturnType<typeof setInterval> | null = null;
 
-  private scanResultSubject = new BehaviorSubject<string | null>(null);
-  public scanResult$ = this.scanResultSubject.asObservable();
+  // Use signals instead of BehaviorSubject
+  private _scanResult = signal<string | null>(null);
+  public scanResult = this._scanResult.asReadonly();
 
   /**
    * Start the scanner with the provided video element
@@ -119,14 +119,14 @@ export class ScannerService {
    * Process QR code content
    */
   private processQrCodeContent(content: string): void {
-    this.scanResultSubject.next(content);
+    this._scanResult.set(content);
   }
 
   /**
    * Clear the current scan result
    */
   public clearScanResult(): void {
-    this.scanResultSubject.next(null);
+    this._scanResult.set(null);
   }
 
   /**

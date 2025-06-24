@@ -1,55 +1,67 @@
-import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { ApiService } from './api.service';
+import { Injectable, inject } from '@angular/core';
+import { MoneyRequestStore } from '../stores/money-request.store';
 import { MoneyRequest } from '../models/money-request.model';
-import { Transaction } from '../models/transaction.model';
 
 @Injectable({
   providedIn: 'root',
 })
 export class MoneyRequestService {
-  constructor(private apiService: ApiService) {}
+  private moneyRequestStore = inject(MoneyRequestStore);
 
   /**
-   * Get all money requests for the current user
+   * Get incoming requests signal
    */
-  getUserMoneyRequests(): Observable<MoneyRequest[]> {
-    return this.apiService.get<MoneyRequest[]>('money-requests');
+  get incomingRequests() {
+    return this.moneyRequestStore.incomingRequests;
   }
 
   /**
-   * Get money requests sent by the current user
+   * Get outgoing requests signal
    */
-  getSentMoneyRequests(): Observable<MoneyRequest[]> {
-    return this.apiService.get<MoneyRequest[]>('money-requests/sent');
+  get outgoingRequests() {
+    return this.moneyRequestStore.outgoingRequests;
   }
 
   /**
-   * Alias for getSentMoneyRequests
+   * Get pending requests signal
    */
-  getOutgoingRequests(): Observable<MoneyRequest[]> {
-    return this.getSentMoneyRequests();
+  get pendingRequests() {
+    return this.moneyRequestStore.pendingRequests;
   }
 
   /**
-   * Get money requests received by the current user
+   * Get loading state signal
    */
-  getReceivedMoneyRequests(): Observable<MoneyRequest[]> {
-    return this.apiService.get<MoneyRequest[]>('money-requests/received');
+  get isLoading() {
+    return this.moneyRequestStore.isLoading;
   }
 
   /**
-   * Alias for getReceivedMoneyRequests
+   * Get error state signal
    */
-  getIncomingRequests(): Observable<MoneyRequest[]> {
-    return this.getReceivedMoneyRequests();
+  get error() {
+    return this.moneyRequestStore.error;
   }
 
   /**
-   * Get pending money requests
+   * Load incoming money requests
    */
-  getPendingRequests(): Observable<MoneyRequest[]> {
-    return this.apiService.get<MoneyRequest[]>('money-requests/pending');
+  loadIncomingRequests(): void {
+    this.moneyRequestStore.loadIncomingRequests();
+  }
+
+  /**
+   * Load outgoing money requests
+   */
+  loadOutgoingRequests(): void {
+    this.moneyRequestStore.loadOutgoingRequests();
+  }
+
+  /**
+   * Load pending money requests
+   */
+  loadPendingRequests(): void {
+    this.moneyRequestStore.loadPendingRequests();
   }
 
   /**
@@ -57,42 +69,45 @@ export class MoneyRequestService {
    */
   createMoneyRequest(requestData: {
     requesteeEmail: string;
-    walletNumber: string; // Changed from walletId: number
+    walletNumber: string;
     amount: number;
     description?: string;
-  }): Observable<MoneyRequest> {
-    return this.apiService.post<MoneyRequest>('money-requests', requestData);
+  }): void {
+    this.moneyRequestStore.createRequest(requestData);
   }
 
   /**
    * Accept a money request
    */
-  acceptMoneyRequest(requestId: number, sourceWalletId: number): Observable<Transaction> {
-    return this.apiService.post<Transaction>(`money-requests/${requestId}/accept`, {
-      sourceWalletId,
-    });
+  acceptMoneyRequest(requestId: number, sourceWalletId: number): void {
+    this.moneyRequestStore.acceptRequest({ requestId, sourceWalletId });
   }
 
   /**
    * Pay a money request using a payment method
    */
-  payMoneyRequest(requestId: number, paymentMethodId: number): Observable<Transaction> {
-    return this.apiService.post<Transaction>(`money-requests/${requestId}/pay`, {
-      paymentMethodId,
-    });
+  payMoneyRequest(requestId: number, paymentMethodId: number): void {
+    this.moneyRequestStore.payRequest({ requestId, paymentMethodId });
   }
 
   /**
    * Reject a money request
    */
-  rejectMoneyRequest(requestId: number): Observable<MoneyRequest> {
-    return this.apiService.post<MoneyRequest>(`money-requests/${requestId}/reject`, {});
+  rejectMoneyRequest(requestId: number): void {
+    this.moneyRequestStore.rejectRequest({ requestId });
   }
 
   /**
-   * Cancel a money request (for the sender)
+   * Cancel a money request
    */
-  cancelMoneyRequest(requestId: number): Observable<MoneyRequest> {
-    return this.apiService.post<MoneyRequest>(`money-requests/${requestId}/cancel`, {});
+  cancelMoneyRequest(requestId: number): void {
+    this.moneyRequestStore.cancelRequest({ requestId });
+  }
+
+  /**
+   * Clear error state
+   */
+  clearError(): void {
+    this.moneyRequestStore.clearError();
   }
 }
