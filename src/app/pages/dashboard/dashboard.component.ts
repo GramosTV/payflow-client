@@ -26,9 +26,8 @@ export class DashboardComponent implements OnInit {
   private walletStore = inject(WalletStore);
   private transactionStore = inject(TransactionStore);
   private moneyRequestStore = inject(MoneyRequestStore);
-  private exchangeRateService = inject(ExchangeRateService);
-  // Expose enums for template use
-  readonly TransactionType = TransactionType;
+  private exchangeRateService = inject(ExchangeRateService); // Expose enums for template use
+  public readonly TransactionType = TransactionType;
 
   // Get signals from stores
   wallet = this.walletStore.wallet;

@@ -69,9 +69,8 @@ export class QrCodeComponent implements OnInit, OnDestroy {
   private scannerService = inject(ScannerService);
   private errorHandler = inject(ErrorHandlingService);
   private formBuilder = inject(FormBuilder);
-
   // Expose enums for template use
-  readonly PaymentMethodType = PaymentMethodType;
+  public readonly PaymentMethodType = PaymentMethodType;
 
   qrCodeForm: FormGroup;
 

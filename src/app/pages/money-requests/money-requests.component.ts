@@ -61,10 +61,9 @@ export class MoneyRequestsComponent implements OnInit {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private formBuilder = inject(FormBuilder);
-
   // Expose enums for template use
-  readonly RequestStatus = RequestStatus;
-  readonly PaymentMethodType = PaymentMethodType;
+  public readonly RequestStatus = RequestStatus;
+  public readonly PaymentMethodType = PaymentMethodType;
 
   requestForm: FormGroup;
   paymentMethodControl = new FormControl(PaymentMethodType.WALLET);

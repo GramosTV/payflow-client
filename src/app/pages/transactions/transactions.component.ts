@@ -54,10 +54,9 @@ export class TransactionsComponent implements OnInit, AfterViewInit {
   @ViewChild('transactionDetailsTmpl')
   transactionDetailsTmpl!: TemplateRef<Transaction>;
   private transactionService = inject(TransactionService);
-  private dialog = inject(MatDialog);
-  // Expose enums for template use
-  readonly TransactionType = TransactionType;
-  readonly TransactionStatus = TransactionStatus;
+  private dialog = inject(MatDialog); // Expose enums for template use
+  public readonly TransactionType = TransactionType;
+  public readonly TransactionStatus = TransactionStatus;
 
   displayedColumns: string[] = ['type', 'description', 'timestamp', 'amount', 'status', 'details'];
   dataSource = new MatTableDataSource<Transaction>([]);
