@@ -38,6 +38,22 @@
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
   },
+  "overrides": {
+    "@ngrx/signals": {
+      "@angular/common": "$@angular/common",
+      "@angular/core": "$@angular/core"
+    },
+    "@zxing/ngx-scanner": {
+      "@angular/common": "$@angular/common",
+      "@angular/core": "$@angular/core",
+      "@angular/forms": "$@angular/forms"
+    },
+    "ngx-currency": {
+      "@angular/common": "$@angular/common",
+      "@angular/core": "$@angular/core",
+      "@angular/forms": "$@angular/forms"
+    }
+  },
   "devDependencies": {
     "@angular-devkit/build-angular": "^20.0.0",
     "@angular/cli": "^20.0.0",
